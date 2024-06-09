@@ -34,8 +34,8 @@ class Player(pygame.sprite.Sprite):
     def draw(self, mouse_angle):
         print('he')
         self.rotate = pygame.transform.rotozoom(self.image, mouse_angle, 1)
-        self.retartded_rect = self.rotate.get_rect(center = (self.x, self.y))
-        screen.blit(self.rotate, self.retartded_rect)
+        self.orthogonally_tilted_quadrilateral_plane = self.rotate.get_rect(center = (self.x, self.y))
+        screen.blit(self.rotate, self.orthogonally_tilted_quadrilateral_plane)
        
 player = Player(600, 400)
 objects = pygame.sprite.Group()
