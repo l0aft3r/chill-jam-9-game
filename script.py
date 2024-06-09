@@ -24,9 +24,9 @@ class Player(pygame.sprite.Sprite):
     def update(self, dt):
          keys = pygame.key.get_pressed()
          if keys[pygame.K_w]:
-             self.x -= 300 * dt
+             self.y -= 300 * dt
          elif keys[pygame.K_s]:
-             self.x += 300 * dt
+             self.y += 300 * dt
          if keys[pygame.K_a]:
              self.x -= 300 * dt
          elif keys[pygame.K_d]:
