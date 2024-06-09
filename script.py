@@ -31,8 +31,9 @@ class Player(pygame.sprite.Sprite):
              self.x -= 300 * dt
          elif keys[pygame.K_d]:
              self.x += 300 * dt
-    def draw(self):
-        self.rotate = pygame.transform.rotozoom(self.image, 33, 1)
+    def draw(self, mouse_angle):
+        print('he')
+        self.rotate = pygame.transform.rotozoom(self.image, mouse_angle, 1)
         self.retartded_rect = self.rotate.get_rect(center = (self.x, self.y))
         screen.blit(self.rotate, self.retartded_rect)
        
@@ -51,7 +52,9 @@ while True:
 
     mouse_angle = math.degrees(math.atan2(mouse_pos[0] - player.x, mouse_pos[1] - player.y)) 
     objects.update(dt)
-    objects.draw(screen)
+    for i in objects:
+        i.draw(mouse_angle)
+
    
     
     pygame.display.flip()
