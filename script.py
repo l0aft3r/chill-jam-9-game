@@ -18,7 +18,7 @@ class Player(pygame.sprite.Sprite):
         self.x = x
         self.y = y
         self.speed = 400
-        self.image = pygame.image.load("chill-jam-9-game\png-transparent-football-ball-game-soccer-ball-soccer-ball-artwork-miscellaneous-sport-sports-equipment-thumbnail.png").convert_alpha()
+        self.image = pygame.image.load("png-transparent-football-ball-game-soccer-ball-soccer-ball-artwork-miscellaneous-sport-sports-equipment-thumbnail.png").convert_alpha()
         self.rect = self.image.get_rect(center=(self.x, self.y))
     
     def update(self, dt):
