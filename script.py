@@ -2,61 +2,63 @@ import sys
 import pygame
 import math
 
-
 pygame.init()
 
-size = width, height = 1280, 720
-black = 0, 0, 0
+BLACK = 0, 0, 0
 
-screen = pygame.display.set_mode(size)
+screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN) #This makes the game fullscreen. You can comment it out and set your own screen dimensions if you find it annoying
 clock = pygame.time.Clock()
 dt = 0
 
 class Player(pygame.sprite.Sprite):
+
     def __init__(self, x, y):
         super().__init__()
         self.x = x
         self.y = y
-        self.speed = 400
+        self.speed = 300
         self.image = pygame.image.load("png-transparent-football-ball-game-soccer-ball-soccer-ball-artwork-miscellaneous-sport-sports-equipment-thumbnail.png").convert_alpha()
         self.rect = self.image.get_rect(center=(self.x, self.y))
     
-    def update(self, dt):
-         keys = pygame.key.get_pressed()
+    def update(self, dt, keys):
          if keys[pygame.K_w]:
-             self.y -= 300 * dt
+             self.y -= self.speed * dt
          elif keys[pygame.K_s]:
-             self.y += 300 * dt
+             self.y += self.speed * dt
          if keys[pygame.K_a]:
-             self.x -= 300 * dt
+             self.x -= self.speed * dt
          elif keys[pygame.K_d]:
-             self.x += 300 * dt
-    def draw(self, mouse_angle):
-        print('he')
+             self.x += self.speed * dt
+
+    def draw(self, mouse_pos):
+        mouse_angle = math.degrees(math.atan2(mouse_pos[0] - player.x, mouse_pos[1] - player.y)) 
         self.rotate = pygame.transform.rotozoom(self.image, mouse_angle, 1)
         self.orthogonally_tilted_quadrilateral_plane = self.rotate.get_rect(center = (self.x, self.y))
         screen.blit(self.rotate, self.orthogonally_tilted_quadrilateral_plane)
        
 player = Player(600, 400)
+
 objects = pygame.sprite.Group()
 objects.add(player)
 
 while True:
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if event.type == pygame.QUIT or pygame.key.get_pressed()[pygame.K_ESCAPE]:
             pygame.quit()
             sys.exit()
+
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_ESCAPE]: #Added closing the game using ESC
+        pygame.quit()
+        sys.exit()
     
     mouse_pos = pygame.mouse.get_pos()
-    screen.fill(black)
 
-    mouse_angle = math.degrees(math.atan2(mouse_pos[0] - player.x, mouse_pos[1] - player.y)) 
-    objects.update(dt)
+    screen.fill(BLACK)
+    objects.update(dt, keys)
     for i in objects:
-        i.draw(mouse_angle)
+            i.draw(mouse_pos)
 
-   
-    
     pygame.display.flip()
 
 
