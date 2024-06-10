@@ -6,7 +6,7 @@ pygame.init()
 
 BLACK = 0, 0, 0
 
-screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN) #This makes the game fullscreen. You can comment it out and set your own screen dimensions if you find it annoying
+screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN) #You can comment this line out and set your own screen dimensions if you find it annoying
 clock = pygame.time.Clock()
 dt = 0
 
@@ -14,6 +14,7 @@ class Player(pygame.sprite.Sprite):
 
     def __init__(self, x, y):
         super().__init__()
+        self.temp = 0
         self.x = x
         self.y = y
         self.speed = 300
