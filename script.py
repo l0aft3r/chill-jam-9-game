@@ -54,10 +54,15 @@ class Player(pygame.sprite.Sprite):
         self.x = x
         self.y = y
         self.speed = 400
+        self.health = 100
+        self.sun_bar = 100
+        self.pressed = False
+        self.time = 1
         self.image = pygame.image.load("player.png").convert_alpha()
         self.rect = self.image.get_rect(center=(self.x, self.y))
     
     def update(self, dt):
+         self.time += dt
          keys = pygame.key.get_pressed()
          if keys[pygame.K_w]:
              self.y -= 300 * dt
@@ -68,8 +73,22 @@ class Player(pygame.sprite.Sprite):
          elif keys[pygame.K_d]:
              self.x += 300 * dt
          if event.type == pygame.MOUSEBUTTONDOWN:
-            bullet = Bullet(self.x, self.y, mouse_angle)
-            bullets.add(bullet)
+            if event.button == 1 and not self.pressed:
+                bullet = Bullet(self.x, self.y, mouse_angle)
+                bullets.add(bullet)
+                self.pressed = True
+         elif event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 1:
+                self.pressed = False
+            
+         #drains the sun bar every 5 seconds
+         if (round(self.time) % 5) == 0:
+            print('sun damage')
+            self.sun_bar -=10
+
+         #kill the player when health reaches 0
+         if self.health <= 0 or self.sun_bar <= 0:
+             pygame.sprite.Sprite.kill(self)
         
             
     def draw(self, mouse_angle):
@@ -98,7 +117,8 @@ while True:
 
     for i in bullets:
         i.draw()
-
+    pygame.draw.line(screen, 'red', (10, 10), (10 + player.health, 10), width=5)
+    pygame.draw.line(screen, 'yellow', (10, 20), (10 + player.health, 20), width=5)
    
     
     pygame.display.flip()
