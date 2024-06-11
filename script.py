@@ -3,7 +3,6 @@ import pygame
 import math
 import time
 
-
 pygame.init()
 
 size = width, height = 1280, 600
@@ -43,14 +42,13 @@ class Bullet(pygame.sprite.Sprite):
         self.rect = self.rotate.get_rect(center=(self.x, self.y))
         screen.blit(self.rotate, (self.rect.center))
 
-
-        
-
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
         self.x = x
         self.y = y
+        self.x_offset = 0
+        self.y_offset = 0
         self.speed = 400
         self.health = 100
         self.sun_bar = 100
@@ -60,17 +58,26 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=(self.x, self.y))
         self.last_fired = time.time()
         self.fire_cooldown = 1
+        self.yy = 0
+        self.xx = 0
+
     def update(self, dt):
         self.time -= dt
         keys = pygame.key.get_pressed()
         if keys[pygame.K_w]:
-            self.y -= 300 * dt
+            self.yy -= 300 * dt
         elif keys[pygame.K_s]:
-            self.y += 300 * dt
+            self.yy += 300 * dt
         if keys[pygame.K_a]:
-            self.x -= 300 * dt
+            self.xx -= 300 * dt
         elif keys[pygame.K_d]:
-            self.x += 300 * dt
+            self.xx += 300 * dt
+
+        self.x_offset = self.xx
+        self.y_offset = self.yy
+
+        self.xx = 0
+        self.yy = 0
         
         if pygame.mouse.get_pressed()[0] and time.time() - self.last_fired > self.fire_cooldown:
             bullet = Bullet(self.x, self.y, mouse_angle)
@@ -87,7 +94,8 @@ class Player(pygame.sprite.Sprite):
         #kill the player when health reaches 0
         if self.health <= 0 or self.sun_bar <= 0:
             pygame.sprite.Sprite.kill(self)
-  
+
+        return (self.x_offset, self.y_offset)
             
     def draw(self, mouse_angle):
         self.rotate = pygame.transform.rotozoom(self.image, mouse_angle, 1)
@@ -97,12 +105,11 @@ class Player(pygame.sprite.Sprite):
     def TakeDamage(self, amount):
         self.health -= amount
         
-      
-       
 player = Player(600, 400)
 objects = pygame.sprite.Group()
-objects.add(player)
+#objects.add(player)
 bullets = pygame.sprite.Group()
+
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -115,10 +122,15 @@ while True:
     mouse_angle = math.degrees(math.atan2(mouse_pos[0] - player.x, mouse_pos[1] - player.y)) 
     objects.update(dt)
     bullets.update(dt)
+
+    player.update(dt)
     for i in objects:
         i.draw(mouse_angle)
 
+    player.draw(mouse_angle)
     for i in bullets:
+        i.x = i.x + player.x_offset
+        i.y = i.y + player.y_offset
         i.draw()
     
      #draw the health bar
