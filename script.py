@@ -12,7 +12,18 @@ screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 dt = 0
 
-        
+class Button(pygame.sprite.Sprite):
+    def __init__(self, text, x, y, height, width, color, image_path):
+        super().__init__()
+        self.rect = pygame.Rect(x,y, width, height)
+        self.surface = pygame.surface.Surface((width, height))
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.color = color
+    def draw(self):
+        pygame.draw.rect(self.surface, self.color, self.rect)        
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y, mouse_angle):
@@ -109,7 +120,9 @@ player = Player(600, 400)
 objects = pygame.sprite.Group()
 #objects.add(player)
 bullets = pygame.sprite.Group()
-
+ui = pygame.sprite.Group()
+bottown = Button('fuck', 60, 60, 30, 100, 'red', 'wa')
+ui.add(bottown)
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -123,8 +136,13 @@ while True:
     objects.update(dt)
     bullets.update(dt)
 
+    for i in ui:
+        i.draw()
+
     player.update(dt)
     for i in objects:
+        i.x = i.x + player.x_offset
+        i.y = i.y + player.y_offset
         i.draw(mouse_angle)
 
     player.draw(mouse_angle)
