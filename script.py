@@ -68,7 +68,7 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.image.load("player.png").convert_alpha()
         self.rect = self.image.get_rect(center=(self.x, self.y))
         self.last_fired = time.time()
-        self.fire_cooldown = 1
+        self.fire_cooldown = 0.5
         self.yy = 0
         self.xx = 0
 
