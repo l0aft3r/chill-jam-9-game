@@ -61,33 +61,32 @@ class Player(pygame.sprite.Sprite):
         self.last_fired = time.time()
         self.fire_cooldown = 1
     def update(self, dt):
-         self.time -= dt
-         keys = pygame.key.get_pressed()
-         if keys[pygame.K_w]:
-             self.y -= 300 * dt
-         elif keys[pygame.K_s]:
-             self.y += 300 * dt
-         if keys[pygame.K_a]:
-             self.x -= 300 * dt
-         elif keys[pygame.K_d]:
-             self.x += 300 * dt
-         if True:
-            if pygame.mouse.get_pressed()[0] and time.time() - self.last_fired > self.fire_cooldown:
-                bullet = Bullet(self.x, self.y, mouse_angle)
-                bullets.add(bullet)
-                self.last_fired = time.time()
-                #self.pressed = True
-         
-         #drains the sun bar every 5 seconds
-         if self.time <= 0:
-            print('sun damage')
-            self.sun_bar -=1
-            self.time = 5
-            
-
-         #kill the player when health reaches 0
-         if self.health <= 0 or self.sun_bar <= 0:
-             pygame.sprite.Sprite.kill(self)
+        self.time -= dt
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_w]:
+            self.y -= 300 * dt
+        elif keys[pygame.K_s]:
+            self.y += 300 * dt
+        if keys[pygame.K_a]:
+            self.x -= 300 * dt
+        elif keys[pygame.K_d]:
+            self.x += 300 * dt
+        
+        if pygame.mouse.get_pressed()[0] and time.time() - self.last_fired > self.fire_cooldown:
+            bullet = Bullet(self.x, self.y, mouse_angle)
+            bullets.add(bullet)
+            self.last_fired = time.time()
+            #self.pressed = True
+        
+        #drains the sun bar every 5 seconds
+        if self.time <= 0:
+           print('sun damage')
+           self.sun_bar -=1
+           self.time = 5
+           
+        #kill the player when health reaches 0
+        if self.health <= 0 or self.sun_bar <= 0:
+            pygame.sprite.Sprite.kill(self)
   
             
     def draw(self, mouse_angle):
