@@ -97,13 +97,13 @@ class Player(pygame.sprite.Sprite):
             #self.pressed = True
         keys = pygame.key.get_pressed()
         if keys[pygame.K_w]:
-            self.yy -= 300 * dt
-        elif keys[pygame.K_s]:
             self.yy += 300 * dt
+        elif keys[pygame.K_s]:
+            self.yy -= 300 * dt
         if keys[pygame.K_a]:
-            self.xx -= 300 * dt
-        elif keys[pygame.K_d]:
             self.xx += 300 * dt
+        elif keys[pygame.K_d]:
+            self.xx -= 300 * dt
 
         self.x_offset = self.xx
         self.y_offset = self.yy
