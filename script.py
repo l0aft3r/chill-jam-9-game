@@ -3,14 +3,30 @@ import pygame
 import math
 import time
 
+
+
 pygame.init()
 
 size = width, height = 1280, 600
 black = 0, 0, 0
 
 screen = pygame.display.set_mode(size)
+
+
+
 clock = pygame.time.Clock()
 dt = 0
+class Objects(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.x = 0
+        self.y = 0
+        self.bgt = pygame.image.load("bg.png")
+        self.bg = pygame.transform.scale(self.bgt, (2500, 2500))
+
+    def draw(self, screen):
+        screen.blit(self.bg, (self.x, self.y))
+
 
 class Button(pygame.sprite.Sprite):
     def __init__(self, text, x, y, height, width, color, image_path):
@@ -74,6 +90,11 @@ class Player(pygame.sprite.Sprite):
 
     def update(self, dt):
         self.time -= dt
+        if pygame.mouse.get_pressed()[0] and time.time() - self.last_fired > self.fire_cooldown:
+            bullet = Bullet(self.x, self.y, mouse_angle)
+            bullets.add(bullet)
+            self.last_fired = time.time()
+            #self.pressed = True
         keys = pygame.key.get_pressed()
         if keys[pygame.K_w]:
             self.yy -= 300 * dt
@@ -90,11 +111,7 @@ class Player(pygame.sprite.Sprite):
         self.xx = 0
         self.yy = 0
         
-        if pygame.mouse.get_pressed()[0] and time.time() - self.last_fired > self.fire_cooldown:
-            bullet = Bullet(self.x, self.y, mouse_angle)
-            bullets.add(bullet)
-            self.last_fired = time.time()
-            #self.pressed = True
+        
         
         #drains the sun bar every 5 seconds
         if self.time <= 0:
@@ -123,15 +140,20 @@ bullets = pygame.sprite.Group()
 ui = pygame.sprite.Group()
 bottown = Button('fuck', 60, 60, 30, 100, 'red', 'wa')
 ui.add(bottown)
+bg = Objects()
+objects.add(bg)
 while True:
+    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+    #INSIDE OF THE GAME LOOP
     
+
+#REST OF ITEMS ARE BLIT'D TO SCREEN
     mouse_pos = pygame.mouse.get_pos()
     screen.fill(black)
-
     mouse_angle = math.degrees(math.atan2(mouse_pos[0] - player.x, mouse_pos[1] - player.y)) 
     objects.update(dt)
     bullets.update(dt)
@@ -141,14 +163,14 @@ while True:
 
     player.update(dt)
     for i in objects:
-        i.x = i.x + player.x_offset
-        i.y = i.y + player.y_offset
-        i.draw(mouse_angle)
+        i.x = i.x - player.x_offset
+        i.y = i.y - player.y_offset
+        i.draw(screen)
 
     player.draw(mouse_angle)
     for i in bullets:
-        i.x = i.x + player.x_offset
-        i.y = i.y + player.y_offset
+        i.x = i.x - player.x_offset
+        i.y = i.y - player.y_offset
         i.draw()
     
      #draw the health bar
