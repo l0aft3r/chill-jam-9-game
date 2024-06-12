@@ -76,13 +76,13 @@ class Player(pygame.sprite.Sprite):
         self.time -= dt
         keys = pygame.key.get_pressed()
         if keys[pygame.K_w]:
-            self.yy -= 300 * dt
-        elif keys[pygame.K_s]:
             self.yy += 300 * dt
+        elif keys[pygame.K_s]:
+            self.yy -= 300 * dt
         if keys[pygame.K_a]:
-            self.xx -= 300 * dt
-        elif keys[pygame.K_d]:
             self.xx += 300 * dt
+        elif keys[pygame.K_d]:
+            self.xx -= 300 * dt
 
         self.x_offset = self.xx
         self.y_offset = self.yy
@@ -123,6 +123,7 @@ bullets = pygame.sprite.Group()
 ui = pygame.sprite.Group()
 bottown = Button('fuck', 60, 60, 30, 100, 'red', 'wa')
 ui.add(bottown)
+
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -130,7 +131,6 @@ while True:
             sys.exit()
     
     mouse_pos = pygame.mouse.get_pos()
-    screen.fill(black)
 
     mouse_angle = math.degrees(math.atan2(mouse_pos[0] - player.x, mouse_pos[1] - player.y)) 
     objects.update(dt)
