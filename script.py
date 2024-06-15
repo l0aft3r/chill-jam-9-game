@@ -43,8 +43,7 @@ class Objects(pygame.sprite.Sprite):
         super().__init__()
         self.x = 0
         self.y = 0
-        self.bgt = pygame.image.load("bg.png")
-        self.bg = pygame.transform.scale(self.bgt, (1000, 1000))
+        self.bg = pygame.image.load("map.png")
 
     def draw(self, screen):
         screen.blit(self.bg, (self.x, self.y))
@@ -105,8 +104,23 @@ class Player(pygame.sprite.Sprite):
         self.sun_bar = 100
         self.pressed = False
         self.time = 5
-        self.image = pygame.image.load("player.png").convert_alpha()
-        self.gun = pygame.transform.scale(pygame.image.load("gun.png").convert_alpha(), (16,16))
+        self.images = [
+            pygame.image.load("running\Sprite-0002.1.png").convert_alpha(),
+            pygame.image.load("running\Sprite-0002.2.png").convert_alpha(),
+            pygame.image.load("running\Sprite-0002.3.png").convert_alpha(),
+            pygame.image.load("running\Sprite-0002.4.png").convert_alpha(),
+            pygame.image.load("running\Sprite-0002.5.png").convert_alpha(),
+            pygame.image.load("running\Sprite-0002.6.png").convert_alpha(),
+            pygame.image.load("running\Sprite-0002.7.png").convert_alpha(),
+            pygame.image.load("running\Sprite-0002.8.png").convert_alpha(),
+            pygame.image.load("running\Sprite-0002.9.png").convert_alpha(),
+            pygame.image.load("running\Sprite-0002.10.png").convert_alpha(),
+            pygame.image.load("idle\Sprite-0002.1.png").convert_alpha(),
+            pygame.image.load("idle\Sprite-0002.2.png").convert_alpha()
+        ]
+        self.current_image = 1
+        self.image = self.images[self.current_image]
+        self.gun = pygame.image.load("guns\Sprite-0001.png").convert_alpha()
         self.gun_rect = self.image.get_rect(center = (self.x, self.y))
         self.last_fired = time.time()
         self.fire_cooldown = 0.4
@@ -116,9 +130,22 @@ class Player(pygame.sprite.Sprite):
         self.limitx = 200
         self.limiy = 100
         self.flipping_gun = False
+        self.run = False
 
     def update(self, dt):
         self.time -= dt
+        if self.run:
+            self.current_image +=0.3
+            if self.current_image >= len(self.images) -2:
+                self.current_image = 0
+                self.run = False
+        else:
+            self.current_image +=0.1
+            if self.current_image >= len(self.images):
+                self.current_image = len(self.images)- 2
+
+        
+        self.image = self.images[int(self.current_image)]
         if pygame.mouse.get_pressed()[0] and time.time() - self.last_fired > self.fire_cooldown:
             bullet = Bullet(self.gun_rect.x ,self.gun_rect.y, mouse_angle)
             bullets.add(bullet)
@@ -129,25 +156,33 @@ class Player(pygame.sprite.Sprite):
 
         if keys[pygame.K_w] and self.y <= self.limiy:
             self.yy -= self.speed * dt
+            self.run = True
         elif keys[pygame.K_s]and self.y >= screen.get_height() - self.limiy:
             self.yy += self.speed * dt
+            self.run = True
         if keys[pygame.K_a] and self.x <= self.limitx:
             self.xx -= self.speed * dt
             self.flip = False
+            self.run = True
         elif keys[pygame.K_d] and self.x >= screen.get_width()- self.limitx:
             self.xx += self.speed * dt
             self.flip = True
+            self.run = True
 
         if keys[pygame.K_w]and self.y >= self.limiy:
             self.y -= self.speed * dt
+            self.run = True
         elif keys[pygame.K_s]and self.y <= screen.get_height() - self.limiy:
             self.y += self.speed * dt
+            self.run = True
         if keys[pygame.K_a]and self.x >= self.limitx:
             self.x -= self.speed * dt
             self.flip = False
+            self.run = True
         elif keys[pygame.K_d]and self.x <= screen.get_width()- self.limitx:
             self.x += self.speed * dt
             self.flip = True
+            self.run = True
        
         self.rect = self.image.get_rect(center=(self.x, self.y))
         self.x_offset = self.xx
@@ -172,16 +207,15 @@ class Player(pygame.sprite.Sprite):
         return (self.x_offset, self.y_offset)
             
     def draw(self):
-        self.rotate = pygame.transform.scale(self.image, (32,32))
-        self.gun_rotate, self.gun_rect = rotate_on_pivot(pygame.transform.flip(self.gun, self.flipping_gun, False), mouse_angle, (self.x, self.y), (self.x, self.y + 30))
+        self.gun_rotate, self.gun_rect = rotate_on_pivot(pygame.transform.flip(self.gun, self.flipping_gun, False), mouse_angle, (self.x, self.y), (self.x, self.y + 10))
         
-        screen.blit(pygame.transform.flip(self.rotate, self.flip, False), self.rect)
+        screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
         screen.blit(self.gun_rotate, self.gun_rect)
 
     def TakeDamage(self, amount):
         self.health -= amount
         
-player = Player(600, 400)
+player = Player(100, 111)
 objects = pygame.sprite.Group()
 #objects.add(player)
 bullets = pygame.sprite.Group()
