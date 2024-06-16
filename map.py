@@ -1,5 +1,6 @@
 import csv
 
+
 def load_csv(filename):
     with open(filename, newline='') as csvfile:
         reader = csv.reader(csvfile)

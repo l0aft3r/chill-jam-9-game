@@ -3,6 +3,8 @@ import pygame
 import math
 import time
 from pathfinding.core.grid import Grid
+import csv
+
 
 
 
@@ -17,7 +19,26 @@ screen = pygame.display.set_mode(size, flags=pygame.SCALED)
 
 clock = pygame.time.Clock()
 dt = 0
+tl = 16
 
+#save the map array inside a variable
+def load_csv(filename):
+    with open(filename, newline='') as csvfile:
+        reader = csv.reader(csvfile)
+        return [list(map(int, row)) for row in reader]
+
+collision_map = load_csv('map_Tile Layer 1.csv')
+unwalkeble = load_csv('map_obj.csv')
+
+def add_collision(collision_map):
+    nonowalk = []
+    for row_index, row in enumerate(collision_map):
+        for col_index, tile in enumerate(row):
+            nonowalk.append(pygame.Rect(col_index * tl, row_index * tl, tl, tl))
+    return nonowalk
+
+cant = add_collision(collision_map)
+#rotates the gun acording to the mouse position and distanced from the player
 def rotate_on_pivot(image, angle, pivot, origin):
     
     surf = pygame.transform.rotate(image, angle)
@@ -27,15 +48,40 @@ def rotate_on_pivot(image, angle, pivot, origin):
     rect = surf.get_rect(center = offset)
     
     return surf, rect
-"""class Enemy(pygame.sprite.Sprite):
+class Enemy(pygame.sprite.Sprite):
     def  __init__(self, x, y, image):
         super().__init__()
         self.x = x
         self.y = y
+        self.speed = 50
+        self.damage = 10
         self.image = pygame.image.load(f'{image}.png')
-    def update(self):
+        self.rect = self.image.get_rect(center=(self.x, self.y))
+        self.direction = pygame.math.Vector2()
+        self.velocity = pygame.math.Vector2()
+    def update(self, dt):
+        print(self.x)
+        self.player_pos = pygame.math.Vector2(player.x, player.y)
+        self.enemy_pos = pygame.math.Vector2(self.x, self.y)
+        self.distance = self.get_distance(self.player_pos, self.enemy_pos)
+        if self.distance > 15:
+            self.direction = (self.player_pos - self.enemy_pos).normalize()
+        else:
+            player.TakeDamage(12)
+            self.direction = pygame.math.Vector2()
+        self.velocity = self.speed * self.direction * dt
+        self.x += self.velocity.x
+        self.y += self.velocity.y
 
-    def draw(self):"""
+
+        self.rect = self.image.get_rect(center=(self.x, self.y))
+    def get_distance(self, player_pos, enemy_pos):
+        return (player_pos - enemy_pos).magnitude()  
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect.center)
+
+    
 
 
 class Objects(pygame.sprite.Sprite):
@@ -99,7 +145,7 @@ class Player(pygame.sprite.Sprite):
         self.y = y
         self.x_offset = 0
         self.y_offset = 0
-        self.speed = 200
+        self.speed = 100
         self.health = 100
         self.sun_bar = 100
         self.pressed = False
@@ -131,11 +177,12 @@ class Player(pygame.sprite.Sprite):
         self.limiy = 100
         self.flipping_gun = False
         self.run = False
+        self.stop = False
 
     def update(self, dt):
         self.time -= dt
         if self.run:
-            self.current_image +=0.3
+            self.current_image +=0.2
             if self.current_image >= len(self.images) -2:
                 self.current_image = 0
                 self.run = False
@@ -153,38 +200,55 @@ class Player(pygame.sprite.Sprite):
             #self.pressed = True
         keys = pygame.key.get_pressed()
 
-
+        self.rect = self.image.get_rect(center=(self.x, self.y))   
         if keys[pygame.K_w] and self.y <= self.limiy:
             self.yy -= self.speed * dt
             self.run = True
+            if self.stop:
+                self.yy += self.speed * dt
+            
         elif keys[pygame.K_s]and self.y >= screen.get_height() - self.limiy:
             self.yy += self.speed * dt
             self.run = True
+            if self.stop:
+                self.yy -= self.speed * dt
         if keys[pygame.K_a] and self.x <= self.limitx:
             self.xx -= self.speed * dt
             self.flip = False
             self.run = True
+            if self.stop:
+                self.xx += self.speed * dt
         elif keys[pygame.K_d] and self.x >= screen.get_width()- self.limitx:
             self.xx += self.speed * dt
             self.flip = True
             self.run = True
+            if self.stop:
+                self.xx -= self.speed * dt
 
         if keys[pygame.K_w]and self.y >= self.limiy:
             self.y -= self.speed * dt
             self.run = True
+            if self.stop:
+                self.y += self.speed * dt
         elif keys[pygame.K_s]and self.y <= screen.get_height() - self.limiy:
             self.y += self.speed * dt
             self.run = True
+            if self.stop:
+                self.y -= self.speed * dt
         if keys[pygame.K_a]and self.x >= self.limitx:
             self.x -= self.speed * dt
             self.flip = False
             self.run = True
+            if self.stop:
+                self.x += self.speed * dt
         elif keys[pygame.K_d]and self.x <= screen.get_width()- self.limitx:
             self.x += self.speed * dt
             self.flip = True
             self.run = True
-       
-        self.rect = self.image.get_rect(center=(self.x, self.y))
+            if self.stop:
+                self.x -= self.speed * dt
+  
+        
         self.x_offset = self.xx
         self.y_offset = self.yy
         self.gun_rect.x = self.x
@@ -193,7 +257,7 @@ class Player(pygame.sprite.Sprite):
         self.yy = 0
         self.flipping_gun = True if(mouse_angle < 0) else False
         
-        
+
         #drains the sun bar every 5 seconds
         if self.time <= 0:
            print('sun damage')
@@ -205,9 +269,13 @@ class Player(pygame.sprite.Sprite):
             pygame.sprite.Sprite.kill(self)
 
         return (self.x_offset, self.y_offset)
+    
+
+
+
             
     def draw(self):
-        self.gun_rotate, self.gun_rect = rotate_on_pivot(pygame.transform.flip(self.gun, self.flipping_gun, False), mouse_angle, (self.x, self.y), (self.x, self.y + 10))
+        self.gun_rotate, self.gun_rect = rotate_on_pivot(pygame.transform.flip(self.gun, self.flipping_gun, False), mouse_angle, (self.x, self.y), (self.x, self.y + 14))
         
         screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
         screen.blit(self.gun_rotate, self.gun_rect)
@@ -224,8 +292,13 @@ bottown = Button('fuck', 60, 60, 30, 100, 'red', 'wa')
 ui.add(bottown)
 bg = Objects()
 objects.add(bg)
+en = Enemy(200, 200, 'crab')
+en2 = Enemy(30, 10, 'crab')
+en1 = Enemy(500, 300, 'crab')
+objects.add(en)
+objects.add(en2)
+objects.add(en1)
 while True:
-    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -236,9 +309,6 @@ while True:
     mouse_angle = math.degrees(math.atan2(mouse_pos[0] - player.x, mouse_pos[1] - player.y)) 
     objects.update(dt)
     bullets.update(dt)
-    
-    
-
     player.update(dt)
     for i in objects:
         i.x = i.x - player.x_offset
@@ -253,7 +323,7 @@ while True:
     
     for i in ui:
         i.draw()
-    
+
      #draw the health bar
     pygame.draw.line(screen, 'red', (10, 10), (10 + player.health, 10), width=4)
     pygame.draw.line(screen, 'yellow', (10, 20), (10 + player.sun_bar, 20), width=4)
