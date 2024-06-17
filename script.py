@@ -55,30 +55,63 @@ class Enemy(pygame.sprite.Sprite):
         self.y = y
         self.speed = 50
         self.damage = 10
-        self.image = pygame.image.load(f'{image}.png')
+        self.health = 15
+        self.og = [
+            
+            pygame.image.load("enemies\crab\Sprite-0001.png"),
+            pygame.image.load("enemies\crab\Sprite-0002.png"),
+            pygame.image.load("enemies\crab\Sprite-0003.png"),
+            pygame.image.load("enemies\crab\Sprite-001.png"),
+            pygame.image.load("enemies\crab\Sprite-002.png"),
+            pygame.image.load("enemies\crab\Sprite-003.png"),
+            pygame.image.load("enemies\crab\Sprite-004.png"),
+            pygame.image.load("enemies\crab\Sprite-005.png"),
+            pygame.image.load("enemies\crab\Sprite-006.png"),
+            pygame.image.load("enemies\crab\Sprite-007.png")
+        ]
+        self.image = self.og[0]
+        self.move = True
+        self.current_image = 0
         self.rect = self.image.get_rect(center=(self.x, self.y))
         self.direction = pygame.math.Vector2()
         self.velocity = pygame.math.Vector2()
     def update(self, dt):
-        print(self.x)
         self.player_pos = pygame.math.Vector2(player.x, player.y)
         self.enemy_pos = pygame.math.Vector2(self.x, self.y)
         self.distance = self.get_distance(self.player_pos, self.enemy_pos)
         if self.distance > 15:
+            self.move = True
             self.direction = (self.player_pos - self.enemy_pos).normalize()
         else:
+            self.move = False
             player.TakeDamage(12)
             self.direction = pygame.math.Vector2()
         self.velocity = self.speed * self.direction * dt
         self.x += self.velocity.x
         self.y += self.velocity.y
+        print(self.direction)
+        if self.direction[0] > 0:
+            if self.move:
+                self.current_image +=0.1
+                if int(self.current_image) >= 3:
+                    self.current_image = 0
+            self.image = pygame.transform.flip(self.og[int(self.current_image)], True, False)
 
+        elif self.direction[0] < 0:
+            if self.move:
+                self.current_image +=0.1
+                if int(self.current_image) >= 3:
+                    self.current_image = 0
+            self.image = pygame.transform.flip(self.og[int(self.current_image)], False, False)
+        
 
         self.rect = self.image.get_rect(center=(self.x, self.y))
     def get_distance(self, player_pos, enemy_pos):
         return (player_pos - enemy_pos).magnitude()  
 
     def draw(self, screen):
+        if self.health < 16:
+            pygame.draw.line(screen, 'red', self.enemy_pos, ((self.enemy_pos[0] + self.health), self.enemy_pos[1]))
         screen.blit(self.image, self.rect.center)
 
     
