@@ -57,7 +57,6 @@ class Enemy(pygame.sprite.Sprite):
         self.damage = 10
         self.health = 15
         self.og = [
-            
             pygame.image.load("enemies\crab\Sprite-0001.png"),
             pygame.image.load("enemies\crab\Sprite-0002.png"),
             pygame.image.load("enemies\crab\Sprite-0003.png"),
@@ -89,7 +88,6 @@ class Enemy(pygame.sprite.Sprite):
         self.velocity = self.speed * self.direction * dt
         self.x += self.velocity.x
         self.y += self.velocity.y
-        print(self.direction)
         if self.direction[0] > 0:
             if self.move:
                 self.current_image +=0.1
@@ -106,9 +104,14 @@ class Enemy(pygame.sprite.Sprite):
         
 
         self.rect = self.image.get_rect(center=(self.x, self.y))
+        if self.health <= 0:
+            self.YoungManKillYourself()
     def get_distance(self, player_pos, enemy_pos):
         return (player_pos - enemy_pos).magnitude()  
-
+    def YoungManKillYourself(self):
+        self.kill()
+    def TakeDamage(self, attack_damage):
+        self.health -= attack_damage
     def draw(self, screen):
         if self.health < 16:
             pygame.draw.line(screen, 'red', self.enemy_pos, ((self.enemy_pos[0] + self.health), self.enemy_pos[1]))
@@ -117,7 +120,7 @@ class Enemy(pygame.sprite.Sprite):
     
 
 
-class Objects(pygame.sprite.Sprite):
+class Maps(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
         self.x = 0
@@ -164,8 +167,9 @@ class Bullet(pygame.sprite.Sprite):
         self.lifetime -= dt
         if self.lifetime <= 0:
             print('deleting')
-            pygame.sprite.Sprite.kill(self)
-
+            self.YoungManKillYourself()
+    def YoungManKillYourself(self):
+        self.kill()
     def draw(self):
         self.rotate = pygame.transform.rotozoom(self.image, self.mouse_angle, 1)
         self.rect = self.rotate.get_rect(center=(self.x, self.y))
@@ -211,7 +215,7 @@ class Player(pygame.sprite.Sprite):
         self.flipping_gun = False
         self.run = False
         self.stop = False
-
+        self.attack_damage = 5
     def update(self, dt):
         self.time -= dt
         if self.run:
@@ -321,10 +325,11 @@ objects = pygame.sprite.Group()
 #objects.add(player)
 bullets = pygame.sprite.Group()
 ui = pygame.sprite.Group()
+maps = pygame.sprite.Group()
 bottown = Button('fuck', 60, 60, 30, 100, 'red', 'wa')
 ui.add(bottown)
-bg = Objects()
-objects.add(bg)
+bg = Maps()
+maps.add(bg)
 en = Enemy(200, 200, 'crab')
 en2 = Enemy(30, 10, 'crab')
 en1 = Enemy(500, 300, 'crab')
@@ -343,6 +348,10 @@ while True:
     objects.update(dt)
     bullets.update(dt)
     player.update(dt)
+    for i in maps:
+        i.x = i.x - player.x_offset
+        i.y = i.y - player.y_offset
+        i.draw(screen)
     for i in objects:
         i.x = i.x - player.x_offset
         i.y = i.y - player.y_offset
@@ -356,6 +365,15 @@ while True:
     
     for i in ui:
         i.draw()
+    
+    for bullet in bullets:
+        for object in objects:
+           if bullet.rect.colliderect(object.rect):
+               bullet.YoungManKillYourself()
+               object.TakeDamage(player.attack_damage)
+               print('popo')
+            
+              
 
      #draw the health bar
     pygame.draw.line(screen, 'red', (10, 10), (10 + player.health, 10), width=4)
