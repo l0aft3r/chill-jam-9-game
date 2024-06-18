@@ -68,12 +68,14 @@ class Enemy(pygame.sprite.Sprite):
             pygame.image.load("enemies\crab\Sprite-006.png"),
             pygame.image.load("enemies\crab\Sprite-007.png")
         ]
+        self.current_lick = 3
         self.image = self.og[0]
         self.move = True
         self.current_image = 0
         self.rect = self.image.get_rect(center=(self.x, self.y))
         self.direction = pygame.math.Vector2()
         self.velocity = pygame.math.Vector2()
+        self.flip = False
     def update(self, dt):
         self.player_pos = pygame.math.Vector2(player.x, player.y)
         self.enemy_pos = pygame.math.Vector2(self.x, self.y)
@@ -83,7 +85,12 @@ class Enemy(pygame.sprite.Sprite):
             self.direction = (self.player_pos - self.enemy_pos).normalize()
         else:
             self.move = False
-            player.TakeDamage(12)
+            if not self.move:
+                self.current_lick +=0.2
+                if int(self.current_lick) >= 9:
+                    self.current_lick = 3
+                    player.TakeDamage(10)
+            self.image = pygame.transform.flip(self.og[int(self.current_lick)], self.flip, False)
             self.direction = pygame.math.Vector2()
         self.velocity = self.speed * self.direction * dt
         self.x += self.velocity.x
@@ -93,15 +100,16 @@ class Enemy(pygame.sprite.Sprite):
                 self.current_image +=0.1
                 if int(self.current_image) >= 3:
                     self.current_image = 0
-            self.image = pygame.transform.flip(self.og[int(self.current_image)], True, False)
+            self.flip = True
+            self.image = pygame.transform.flip(self.og[int(self.current_image)], self.flip, False)
 
         elif self.direction[0] < 0:
             if self.move:
                 self.current_image +=0.1
                 if int(self.current_image) >= 3:
                     self.current_image = 0
-            self.image = pygame.transform.flip(self.og[int(self.current_image)], False, False)
-        
+            self.flip = False
+            self.image = pygame.transform.flip(self.og[int(self.current_image)], self.flip, False)
 
         self.rect = self.image.get_rect(center=(self.x, self.y))
         if self.health <= 0:
