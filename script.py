@@ -4,6 +4,9 @@ import math
 import time
 from pathfinding.core.grid import Grid
 import csv
+import random
+
+
 
 
 
@@ -48,12 +51,107 @@ def rotate_on_pivot(image, angle, pivot, origin):
     rect = surf.get_rect(center = offset)
     
     return surf, rect
-class Enemy(pygame.sprite.Sprite):
-    def  __init__(self, x, y, image):
+
+class Coconut(pygame.sprite.Sprite):
+    def __init__(self, x, y):
         super().__init__()
         self.x = x
         self.y = y
-        self.speed = 50
+        self.current_image = 0
+        self.images = [
+            pygame.image.load('items\coconut\Sprite-0001.png'),
+            pygame.image.load('items\coconut\Sprite-0002.png'),
+            pygame.image.load('items\coconut\Sprite-0003.png'),
+            pygame.image.load('items\coconut\Sprite-0004.png'),
+            pygame.image.load('items\coconut\Sprite-0005.png'),
+            pygame.image.load('items\coconut\Sprite-0006.png'),
+            pygame.image.load('items\coconut\Sprite-0007.png'),
+            pygame.image.load('items\coconut\Sprite-0008.png'),
+            pygame.image.load('items\coconut\Sprite-0009.png'),
+            pygame.image.load('items\coconut\Sprite-0010.png')
+
+        ]
+        self.image = self.images[0]
+        self.rect = self.image.get_rect()
+    def update(self, player):
+        self.current_image +=0.1
+        if self.current_image >= len(self.images) - 1:
+            self.current_image = 0
+        self.image = self.images[int(self.current_image)]
+        self.rect = self.image.get_rect(center=(self.x, self.y))
+        if self.rect.colliderect(player.rect):
+            if player.health < player.max_health:
+                player.health = player.health + ((player.max_health/ 100) * 26)
+                self.kill()
+            
+    def draw(self):
+        screen.blit(self.image, (self.x, self.y))
+"""
+class Sunscreen(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.current_image = 0
+        self.images = [
+            pygame.image.load('items/sunscreen/Sprite-0003.png'),
+            pygame.image.load('items/sunscreen/Sprite-0004.png'),
+            pygame.image.load('items/sunscreen/Sprite-0005.png'),
+            pygame.image.load('items/sunscreen/Sprite-0006.png'),
+            pygame.image.load('items/sunscreen/Sprite-0007.png'),
+            pygame.image.load('items/sunscreen/Sprite-0008.png'),
+            pygame.image.load('items/sunscreen/Sprite-0009.png'),
+            pygame.image.load('items/sunscreen/Sprite-0010.png')
+
+        ]
+        self.image = self.images[0]
+    def update(self, player):
+        self.current_image +=0.1
+        if self.current_image >= len(self.images) - 1:
+            self.current_image = 0
+        self.image = self.images[int(self.current_image)]
+    
+    def draw(self):
+        screen.blit(self.image, (self.x, self.y))
+"""
+class Water(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.current_image = 0
+        self.images = [
+            pygame.image.load('items\water\Sprite-0001.png'),
+            pygame.image.load('items\water\Sprite-0002.png'),
+            pygame.image.load('items\water\Sprite-0003.png'),
+            pygame.image.load('items\water\Sprite-0004.png'),
+            pygame.image.load('items\water\Sprite-0005.png'),
+            pygame.image.load('items\water\Sprite-0006.png'),
+            pygame.image.load('items\water\Sprite-0007.png'),
+            pygame.image.load('items\water\Sprite-0008.png'),
+
+        ]
+        self.image = self.images[0]
+        self.rect = self.image.get_rect(center=(self.x, self.y))
+    def update(self, player):
+        self.current_image +=0.1
+        if self.current_image >= len(self.images) - 1:
+            self.current_image = 0
+        self.image = self.images[int(self.current_image)]
+        self.rect = self.image.get_rect(center=(self.x, self.y))
+        if self.rect.colliderect(player.rect):
+            if player.sun_bar < player.max_sun_bar:
+                player.sun_bar = player.max_sun_bar
+                self.kill()
+    def draw(self):
+        screen.blit(self.image, (self.x, self.y))
+
+class Enemy(pygame.sprite.Sprite):
+    def  __init__(self, x, y):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.speed = 90
         self.damage = 10
         self.health = 15
         self.og = [
@@ -86,7 +184,7 @@ class Enemy(pygame.sprite.Sprite):
         else:
             self.move = False
             if not self.move:
-                self.current_lick +=0.2
+                self.current_lick +=0.34
                 if int(self.current_lick) >= 9:
                     self.current_lick = 3
                     player.TakeDamage(10)
@@ -117,6 +215,8 @@ class Enemy(pygame.sprite.Sprite):
     def get_distance(self, player_pos, enemy_pos):
         return (player_pos - enemy_pos).magnitude()  
     def YoungManKillYourself(self):
+        player.xp += 15
+        DropItem(self.x, self.y, random.randint(0, 60))
         self.kill()
     def TakeDamage(self, attack_damage):
         self.health -= attack_damage
@@ -140,18 +240,34 @@ class Maps(pygame.sprite.Sprite):
 
 
 class Button(pygame.sprite.Sprite):
-    def __init__(self, text, x, y, height, width, color, image_path):
+    def __init__(self, color, x, y, width, height, text=''):
         super().__init__()
-        self.rect = pygame.Rect(x,y, width, height)
-        self.surface = pygame.surface.Surface((width, height))
+        self.color = color
         self.x = x
         self.y = y
         self.width = width
         self.height = height
-        self.color = color
-    def draw(self):
-         self.surface.fill(self.color)
-         screen.blit(self.surface, self.rect)
+        self.text = text
+
+    def draw(self, outline=None):
+        # Call this method to draw the button on the screen
+        if outline:
+            pygame.draw.rect(screen, outline, (self.x-2, self.y-2, self.width+4, self.height+4), 0)
+            
+        pygame.draw.rect(screen, self.color, (self.x, self.y, self.width, self.height), 0)
+        
+        if self.text != '':
+            font = pygame.font.SysFont('comicsans', 60)
+            text = font.render(self.text, 1, (0, 0, 0))
+            screen.blit(text, (self.x + (self.width/2 - text.get_width()/2), self.y + (self.height/2 - text.get_height()/2)))
+
+    def isOver(self, pos):
+        # Pos is the mouse position or a tuple of (x, y) coordinates
+        if pos[0] > self.x and pos[0] < self.x + self.width:
+            if pos[1] > self.y and pos[1] < self.y + self.height:
+                return True
+            
+        return False
 
 
 class Bullet(pygame.sprite.Sprite):
@@ -190,9 +306,14 @@ class Player(pygame.sprite.Sprite):
         self.y = y
         self.x_offset = 0
         self.y_offset = 0
+        self.level = 0
+        self.xp = 1
+        self.next_level_xp = 100
         self.speed = 100
         self.health = 100
+        self.max_health = 100
         self.sun_bar = 100
+        self.max_sun_bar = 100
         self.pressed = False
         self.time = 5
         self.images = [
@@ -312,7 +433,14 @@ class Player(pygame.sprite.Sprite):
         #kill the player when health reaches 0
         if self.health <= 0 or self.sun_bar <= 0:
             pygame.sprite.Sprite.kill(self)
-
+        if self.xp >= self.next_level_xp:
+            self.xp = 1 + (self.xp - self.next_level_xp)
+            self.next_level_xp = self.next_level_xp + (self.next_level_xp * 2.1)
+            self.level +=1
+        if self.health > self.max_health:
+            self.health = self.max_health
+        if self.sun_bar > self.max_sun_bar:
+            self.health = self.max_sun_bar
         return (self.x_offset, self.y_offset)
     
 
@@ -334,16 +462,27 @@ objects = pygame.sprite.Group()
 bullets = pygame.sprite.Group()
 ui = pygame.sprite.Group()
 maps = pygame.sprite.Group()
-bottown = Button('fuck', 60, 60, 30, 100, 'red', 'wa')
+bottown = Button('red', 100, 100, 100, 50, 'hello')
 ui.add(bottown)
 bg = Maps()
 maps.add(bg)
-en = Enemy(200, 200, 'crab')
-en2 = Enemy(30, 10, 'crab')
-en1 = Enemy(500, 300, 'crab')
+en = Enemy(200, 200)
+en2 = Enemy(30, 10 )
+en1 = Enemy(500, 300)
 objects.add(en)
 objects.add(en2)
 objects.add(en1)
+items = pygame.sprite.Group()
+def DropItem(x,y, num):
+    itms = {
+        43: Water(x, y),
+        6: Coconut(x, y)
+    }
+    if num == 43 or num == 6:
+        items.add(itms[num])
+    else:
+        print('nuh uh')
+
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -379,11 +518,18 @@ while True:
            if bullet.rect.colliderect(object.rect):
                bullet.YoungManKillYourself()
                object.TakeDamage(player.attack_damage)
-               print('popo')
-            
+    
+    items.update(player)
+    for i in items:
+        i.x = i.x - player.x_offset
+        i.y = i.y - player.y_offset
+        i.draw()
               
-
+    print(f'{player.x} : {player.y}')
      #draw the health bar
+
+    pygame.draw.line(screen, 'blue', (10, screen.get_height() - 10), (10 +round(((player.xp / player.next_level_xp) * 100), 1), screen.get_height() - 10), width=6)
+    screen.blit(pygame.image.load('xp_bar.png'), pygame.image.load('xp_bar.png').get_rect(topleft=(7,  screen.get_height() - 20)))
     pygame.draw.line(screen, 'red', (10, 10), (10 + player.health, 10), width=4)
     pygame.draw.line(screen, 'yellow', (10, 20), (10 + player.sun_bar, 20), width=4)
     
