@@ -52,6 +52,34 @@ def rotate_on_pivot(image, angle, pivot, origin):
     
     return surf, rect
 
+#i asked chat gpt to do this cuz we dont have much time YOLO
+#btw i can do it myself but u know i dont need to rn
+class FloatingText(pygame.sprite.Sprite):
+    def __init__(self, text, pos):
+        super().__init__()
+        self.text = text
+        self.pos = list(pos)  # Position as [x, y]
+        self.font = pygame.font.Font(None, 14)  # Font and size
+        self.color = 'WHITE'
+        self.speed = -1  # Speed of floating text movement
+        self.fade_speed = 4  # Speed of fading out
+        self.alpha = 255  # Initial alpha value (fully opaque)
+
+
+    def draw(self, screen):
+        # Render the text
+        self.pos[1] += self.speed
+        self.alpha -= self.fade_speed
+        if self.alpha <= 0:
+            self.alpha = 0
+            self.kill()
+        text_surface = self.font.render(self.text, False, self.color)
+        text_surface.set_alpha(self.alpha)
+        
+        # Blit the text surface onto the screen
+        screen.blit(text_surface, self.pos)
+
+
 class Coconut(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
@@ -147,13 +175,16 @@ class Water(pygame.sprite.Sprite):
         screen.blit(self.image, (self.x, self.y))
 
 class Enemy(pygame.sprite.Sprite):
-    def  __init__(self, x, y):
+    def  __init__(self, x, y, level):
         super().__init__()
         self.x = x
         self.y = y
-        self.speed = 90
-        self.damage = 10
-        self.health = 15
+        self.level = level
+        self.speed = random.randint(80, 94)
+
+        self.damage = 10 * (1 + (self.level / 5))
+        self.health = 15 * (1 + (self.level / 2))
+        self.max_health = 15 * (1 + (self.level / 2))
         self.og = [
             pygame.image.load("enemies\crab\Sprite-0001.png"),
             pygame.image.load("enemies\crab\Sprite-0002.png"),
@@ -174,6 +205,8 @@ class Enemy(pygame.sprite.Sprite):
         self.direction = pygame.math.Vector2()
         self.velocity = pygame.math.Vector2()
         self.flip = False
+    
+        
     def update(self, dt):
         self.player_pos = pygame.math.Vector2(player.x, player.y)
         self.enemy_pos = pygame.math.Vector2(self.x, self.y)
@@ -184,7 +217,7 @@ class Enemy(pygame.sprite.Sprite):
         else:
             self.move = False
             if not self.move:
-                self.current_lick +=0.34
+                self.current_lick +=0.5
                 if int(self.current_lick) >= 9:
                     self.current_lick = 3
                     player.TakeDamage(10)
@@ -215,25 +248,30 @@ class Enemy(pygame.sprite.Sprite):
     def get_distance(self, player_pos, enemy_pos):
         return (player_pos - enemy_pos).magnitude()  
     def YoungManKillYourself(self):
-        player.xp += 15
+        player.xp += 15 * (self.level * 1.6)
         DropItem(self.x, self.y, random.randint(0, 60))
         self.kill()
     def TakeDamage(self, attack_damage):
+
         self.health -= attack_damage
     def draw(self, screen):
-        if self.health < 16:
-            pygame.draw.line(screen, 'red', self.enemy_pos, ((self.enemy_pos[0] + self.health), self.enemy_pos[1]))
+        if self.health < self.max_health:
+            pygame.draw.line(screen, 'red', self.enemy_pos, ((self.enemy_pos[0] + (self.health / self.max_health) * 15), self.enemy_pos[1]))
         screen.blit(self.image, self.rect.center)
 
     
 
 
 class Maps(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, map, top, bottom, left, right):
         super().__init__()
         self.x = 0
         self.y = 0
-        self.bg = pygame.image.load("map.png")
+        self.bg = pygame.image.load(f'{map}.png')
+        self.top = top
+        self.bottom = bottom
+        self.left = left
+        self.right = right
 
     def draw(self, screen):
         screen.blit(self.bg, (self.x, self.y))
@@ -306,12 +344,12 @@ class Player(pygame.sprite.Sprite):
         self.y = y
         self.x_offset = 0
         self.y_offset = 0
-        self.level = 0
+        self.level = 1
         self.xp = 1
-        self.next_level_xp = 100
+        self.next_level_xp = 200
         self.speed = 100
         self.health = 100
-        self.max_health = 100
+        self.max_health = 100 * (1 + (self.level / 10))
         self.sun_bar = 100
         self.max_sun_bar = 100
         self.pressed = False
@@ -343,8 +381,12 @@ class Player(pygame.sprite.Sprite):
         self.limiy = 100
         self.flipping_gun = False
         self.run = False
-        self.stop = False
-        self.attack_damage = 5
+        self.up = False
+        self.down = False
+        self.right = False
+        self.left = False
+        self.attack_damage = int(5 * (1 + (self.level / 11)))
+        self.n_bullet = 1
     def update(self, dt):
         self.time -= dt
         if self.run:
@@ -357,11 +399,29 @@ class Player(pygame.sprite.Sprite):
             if self.current_image >= len(self.images):
                 self.current_image = len(self.images)- 2
 
-        
+        if self.x - bg.x <= bg.left:
+            self.left = True
+            print('less')
+        else:
+            self.left = False
+        if self.x - bg.x >= bg.right:
+            self.right = True
+        else:
+            self.right = False
+        if self.y - bg.y <= bg.top:
+            self.up = True
+        else:
+            self.up = False
+        if self.y - bg.y >= bg.bottom:
+            self.down = True
+        else:
+            self.down = False
         self.image = self.images[int(self.current_image)]
         if pygame.mouse.get_pressed()[0] and time.time() - self.last_fired > self.fire_cooldown:
-            bullet = Bullet(self.gun_rect.x ,self.gun_rect.y, mouse_angle)
-            bullets.add(bullet)
+            for i in range(self.n_bullet):
+                bullet = Bullet(self.gun_rect.x ,self.gun_rect.y, mouse_angle * (1 + (i /10)))
+                print(mouse_angle * 1)
+                bullets.add(bullet)
             self.last_fired = time.time()
             #self.pressed = True
         keys = pygame.key.get_pressed()
@@ -370,51 +430,50 @@ class Player(pygame.sprite.Sprite):
         if keys[pygame.K_w] and self.y <= self.limiy:
             self.yy -= self.speed * dt
             self.run = True
-            if self.stop:
+            if self.up:
                 self.yy += self.speed * dt
             
         elif keys[pygame.K_s]and self.y >= screen.get_height() - self.limiy:
             self.yy += self.speed * dt
             self.run = True
-            if self.stop:
+            if self.down:
                 self.yy -= self.speed * dt
         if keys[pygame.K_a] and self.x <= self.limitx:
             self.xx -= self.speed * dt
             self.flip = False
             self.run = True
-            if self.stop:
+            if self.left:
                 self.xx += self.speed * dt
         elif keys[pygame.K_d] and self.x >= screen.get_width()- self.limitx:
             self.xx += self.speed * dt
             self.flip = True
             self.run = True
-            if self.stop:
+            if self.right:
                 self.xx -= self.speed * dt
 
         if keys[pygame.K_w]and self.y >= self.limiy:
             self.y -= self.speed * dt
             self.run = True
-            if self.stop:
+            if self.up:
                 self.y += self.speed * dt
         elif keys[pygame.K_s]and self.y <= screen.get_height() - self.limiy:
             self.y += self.speed * dt
             self.run = True
-            if self.stop:
+            if self.down:
                 self.y -= self.speed * dt
         if keys[pygame.K_a]and self.x >= self.limitx:
             self.x -= self.speed * dt
             self.flip = False
             self.run = True
-            if self.stop:
+            if self.left:
                 self.x += self.speed * dt
         elif keys[pygame.K_d]and self.x <= screen.get_width()- self.limitx:
             self.x += self.speed * dt
             self.flip = True
             self.run = True
-            if self.stop:
+            if self.right:
                 self.x -= self.speed * dt
   
-        
         self.x_offset = self.xx
         self.y_offset = self.yy
         self.gun_rect.x = self.x
@@ -437,6 +496,9 @@ class Player(pygame.sprite.Sprite):
             self.xp = 1 + (self.xp - self.next_level_xp)
             self.next_level_xp = self.next_level_xp + (self.next_level_xp * 2.1)
             self.level +=1
+            self.max_health = int(100 * (1 + (self.level / 10)))
+            self.attack_damage = int(self.attack_damage * (1 + (self.level / 8)))
+            self.health = self.max_health
         if self.health > self.max_health:
             self.health = self.max_health
         if self.sun_bar > self.max_sun_bar:
@@ -449,7 +511,6 @@ class Player(pygame.sprite.Sprite):
             
     def draw(self):
         self.gun_rotate, self.gun_rect = rotate_on_pivot(pygame.transform.flip(self.gun, self.flipping_gun, False), mouse_angle, (self.x, self.y), (self.x, self.y + 14))
-        
         screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
         screen.blit(self.gun_rotate, self.gun_rect)
 
@@ -464,15 +525,16 @@ ui = pygame.sprite.Group()
 maps = pygame.sprite.Group()
 bottown = Button('red', 100, 100, 100, 50, 'hello')
 ui.add(bottown)
-bg = Maps()
+bg = Maps('map', 0, 470, 150, 640)
 maps.add(bg)
-en = Enemy(200, 200)
-en2 = Enemy(30, 10 )
-en1 = Enemy(500, 300)
+en = Enemy(200, 200, 1)
+en2 = Enemy(30, 10, 2)
+en1 = Enemy(500, 300, 3)
 objects.add(en)
 objects.add(en2)
 objects.add(en1)
 items = pygame.sprite.Group()
+damage_counter = pygame.sprite.Group()
 def DropItem(x,y, num):
     itms = {
         43: Water(x, y),
@@ -498,6 +560,7 @@ while True:
     for i in maps:
         i.x = i.x - player.x_offset
         i.y = i.y - player.y_offset
+        
         i.draw(screen)
     for i in objects:
         i.x = i.x - player.x_offset
@@ -518,19 +581,24 @@ while True:
            if bullet.rect.colliderect(object.rect):
                bullet.YoungManKillYourself()
                object.TakeDamage(player.attack_damage)
+               damage_counter.add(FloatingText(f'{player.attack_damage}', [object.x, object.y]))
     
     items.update(player)
     for i in items:
         i.x = i.x - player.x_offset
         i.y = i.y - player.y_offset
         i.draw()
+    for i in damage_counter:
+        i.x = i.pos[0] - player.x_offset
+        i.y = i.pos[1] - player.y_offset
+        i.draw(screen)
               
-    print(f'{player.x} : {player.y}')
+    #print(f'{player.x - bg.x} : {player.y - bg.y}')
      #draw the health bar
-
+    
     pygame.draw.line(screen, 'blue', (10, screen.get_height() - 10), (10 +round(((player.xp / player.next_level_xp) * 100), 1), screen.get_height() - 10), width=6)
     screen.blit(pygame.image.load('xp_bar.png'), pygame.image.load('xp_bar.png').get_rect(topleft=(7,  screen.get_height() - 20)))
-    pygame.draw.line(screen, 'red', (10, 10), (10 + player.health, 10), width=4)
+    pygame.draw.line(screen, 'red', (10, 10), (10 + (player.health / player.max_health) * 100, 10), width=4)
     pygame.draw.line(screen, 'yellow', (10, 20), (10 + player.sun_bar, 20), width=4)
     
     pygame.display.flip()
