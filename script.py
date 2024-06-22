@@ -287,13 +287,13 @@ class Maps(pygame.sprite.Sprite):
         screen.blit(self.bg, (self.x, self.y))
 
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, x, y, mouse_angle):
+    def __init__(self, x, y, mouse_angle, speed):
         super().__init__()
         self.image = pygame.image.load('bullet.png').convert_alpha()
         self.x = x
         self.y = y
         self.mouse_angle = mouse_angle
-        self.speed = 900
+        self.speed = speed
         self.lifetime = 3
         self.rotate = pygame.transform.rotozoom(self.image, mouse_angle, 1)
         self.rect = self.rotate.get_rect(center =(self.x, self.y))
@@ -396,7 +396,7 @@ class Player(pygame.sprite.Sprite):
         self.image = self.images[int(self.current_image)]
         if pygame.mouse.get_pressed()[0] and time.time() - self.last_fired > self.fire_cooldown:
             for i in range(self.n_bullet):
-                bullet = Bullet(self.gun_rect.x ,self.gun_rect.y, mouse_angle * (1 + (i /10)))
+                bullet = Bullet(self.gun_rect.x ,self.gun_rect.y, mouse_angle * (1 + (i /10)), 300)
                 print(mouse_angle * 1)
                 bullets.add(bullet)
             self.last_fired = time.time()
@@ -588,6 +588,8 @@ def mainGame():
                     player.y = 100
             if bg.base.colliderect(player.rect):
                     maps.remove(bg)
+                    for i in objects:
+                        objects.remove(i)
                     bg = Maps(1)
                     maps.add(bg)
                     player.x = 300
