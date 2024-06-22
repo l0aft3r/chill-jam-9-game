@@ -272,18 +272,35 @@ class Maps(pygame.sprite.Sprite):
             self.bottom = 430
             self.left = 0
             self.right = 470
-        else:
+        elif self.map == 2:
             self.top = 0
             self.bottom = 470
             self.left = 150
+            self.right = 640
+        elif self.map == 3:
+            self.top = 100
+            self.bottom = 470
+            self.left = 120
+            self.right = 640
+        elif self.map == 4:
+            self.top = 0
+            self.bottom = 470
+            self.left = 0
+            self.right = 640
+        elif self.map == 5:
+            self.top = 0
+            self.bottom = 410
+            self.left = 110
             self.right = 640
 
     def draw(self, screen):
         self.base = pygame.Rect(620 + self.x - player.x_offset, 100 + self.y - player.y_offset, 30, 100)
         if self.map == 1:
             self.next_level = pygame.Rect(0 + self.x - player.x_offset, 0 + self.y - player.y_offset, 30, 400)
-        else:
+        elif self.map == 2 or self.map == 3 or self.map == 4:
             self.next_level = pygame.Rect(350 + self.x - player.x_offset, 460 + self.y - player.y_offset, 100, 50)
+        else:
+            self.next_level = pygame.Rect(100 + self.x - player.x_offset, 0 + self.y - player.y_offset, 200, 50)
         screen.blit(self.bg, (self.x, self.y))
 
 class Bullet(pygame.sprite.Sprite):
@@ -582,7 +599,7 @@ def mainGame():
             if bg.next_level.colliderect(player.rect):
                     print('wi')
                     maps.remove(bg)
-                    bg = Maps(2)
+                    bg = Maps(random.randint(2,5))
                     maps.add(bg)
                     player.x = 300
                     player.y = 100
