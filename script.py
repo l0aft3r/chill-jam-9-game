@@ -267,6 +267,9 @@ class Maps(pygame.sprite.Sprite):
         self.base = pygame.Rect(620 + self.x - player.x_offset, 100 + self.y - player.y_offset, 30, 100)
         self.map = map
         self.next_level = pygame.Rect(350 + self.x - player.x_offset, 460 + self.y - player.y_offset, 100, 50)
+        self.arrow2 = 0
+        self.arrow3 = 0
+        self.arrow_up = pygame.transform.rotate(pygame.image.load('arrow.png'), -270)
         if self.map == 1:
             self.top = 80
             self.bottom = 430
@@ -298,10 +301,41 @@ class Maps(pygame.sprite.Sprite):
         if self.map == 1:
             self.next_level = pygame.Rect(0 + self.x - player.x_offset, 0 + self.y - player.y_offset, 30, 400)
         elif self.map == 2 or self.map == 3 or self.map == 4:
-            self.next_level = pygame.Rect(350 + self.x - player.x_offset, 460 + self.y - player.y_offset, 100, 50)
+            self.next_level = pygame.Rect(350 + self.x - player.x_offset, 460 + self.y - player.y_offset, 100, 20)
         else:
-            self.next_level = pygame.Rect(100 + self.x - player.x_offset, 0 + self.y - player.y_offset, 200, 50)
+            self.next_level = pygame.Rect(100 + self.x - player.x_offset, 0 + self.y - player.y_offset, 200, 20)
+        
+        
         screen.blit(self.bg, (self.x, self.y))
+        if can_leave and not map == 1 and not map == 5:
+            self.arrow2 += 0.04
+            if self.arrow2 >= 2:
+                self.arrow2 = 0
+            if int(self.arrow2) == 1:
+                screen.blit(pygame.transform.rotate(pygame.image.load('arrow.png').convert_alpha(), -90), (self.next_level[0], self.next_level[1] -50))
+            else:
+                screen.blit(pygame.transform.rotate(pygame.image.load('arrow2.png').convert_alpha(), -90), (self.next_level[0], self.next_level[1] -50))
+        elif can_leave and not map == 1 and map == 5:
+            self.arrow2 += 0.04
+            if self.arrow2 >= 2:
+                self.arrow2 = 0
+            if int(self.arrow2) == 1:
+                screen.blit(self.arrow_up, (self.next_level[0], self.next_level[1]))
+            else:
+                screen.blit(self.arrow_up, self.next_level)
+        if can_leave:
+            self.arrow3 += 0.04
+            if self.arrow3 >= 2:
+                self.arrow3 = 0
+            if int(self.arrow3) == 1:
+                screen.blit(pygame.image.load('arrow.png').convert_alpha(), (self.base[0] - 64, self.base[1]))
+            else:
+                screen.blit(pygame.image.load('arrow2.png').convert_alpha(), (self.base[0] - 64, self.base[1]))
+
+        
+            
+
+        
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y, mouse_angle, speed):
@@ -368,7 +402,7 @@ class Player(pygame.sprite.Sprite):
         self.gun = pygame.image.load("guns\Sprite-0001.png").convert_alpha()
         self.gun_rect = self.image.get_rect(center = (self.x, self.y))
         self.last_fired = time.time()
-        self.fire_cooldown = 0.4
+        self.fire_cooldown = 0.1
         self.yy = 0
         self.xx = 0
         self.flip = False
@@ -414,7 +448,6 @@ class Player(pygame.sprite.Sprite):
         if pygame.mouse.get_pressed()[0] and time.time() - self.last_fired > self.fire_cooldown:
             for i in range(self.n_bullet):
                 bullet = Bullet(self.gun_rect.x ,self.gun_rect.y, mouse_angle * (1 + (i /10)), 300)
-                print(mouse_angle * 1)
                 bullets.add(bullet)
             self.last_fired = time.time()
             #self.pressed = True
@@ -537,7 +570,7 @@ can_leave = False
 wave = random.randint(0, 2)
 og_wave = wave
 n_enemies = random.randint(int(player.level), int(player.level * 2.5))
-spawn_time = random.randint(10, 50)
+spawn_time = random.randint(40, 100)
 current_spawn_time = 0
 enemies_spawned = 0
 spwn_speed =  0.05 + abs(wave - og_wave)/ 20
@@ -595,10 +628,7 @@ def mainGame():
                 spawn_time = random.randint(0, 2)
                 current_spawn_time = 0
 
-
-                
         print(wave)
-                
         for i in maps:
             i.x = i.x - player.x_offset
             i.y = i.y - player.y_offset
@@ -639,7 +669,7 @@ def mainGame():
             if bg.next_level.colliderect(player.rect):
                     print('wi')
                     maps.remove(bg)
-                    bg = Maps(random.randint(2,5))
+                    bg = Maps(random.randint(2, 5))
                     maps.add(bg)
                     player.x = 300
                     player.y = 100
