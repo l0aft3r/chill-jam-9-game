@@ -259,17 +259,31 @@ class Enemy(pygame.sprite.Sprite):
 
 
 class Maps(pygame.sprite.Sprite):
-    def __init__(self, map, top, bottom, left, right):
+    def __init__(self, map):
         super().__init__()
         self.x = 0
         self.y = 0
-        self.bg = pygame.image.load(f'{map}.png')
-        self.top = top
-        self.bottom = bottom
-        self.left = left
-        self.right = right
+        self.bg = pygame.image.load(f'maps\{map}.png')
+        self.base = pygame.Rect(620 + self.x - player.x_offset, 100 + self.y - player.y_offset, 30, 100)
+        self.map = map
+        self.next_level = pygame.Rect(350 + self.x - player.x_offset, 460 + self.y - player.y_offset, 100, 50)
+        if self.map == 1:
+            self.top = 80
+            self.bottom = 430
+            self.left = 0
+            self.right = 470
+        else:
+            self.top = 0
+            self.bottom = 470
+            self.left = 150
+            self.right = 640
 
     def draw(self, screen):
+        self.base = pygame.Rect(620 + self.x - player.x_offset, 100 + self.y - player.y_offset, 30, 100)
+        if self.map == 1:
+            self.next_level = pygame.Rect(0 + self.x - player.x_offset, 0 + self.y - player.y_offset, 30, 400)
+        else:
+            self.next_level = pygame.Rect(350 + self.x - player.x_offset, 460 + self.y - player.y_offset, 100, 50)
         screen.blit(self.bg, (self.x, self.y))
 
 class Bullet(pygame.sprite.Sprite):
@@ -365,7 +379,6 @@ class Player(pygame.sprite.Sprite):
 
         if self.x - bg.x <= bg.left:
             self.left = True
-            print('less')
         else:
             self.left = False
         if self.x - bg.x >= bg.right:
@@ -489,7 +502,9 @@ ui = pygame.sprite.Group()
 maps = pygame.sprite.Group()
 #bottown = Button('red', 100, 100, 100, 50, 'hello')
 #ui.add(bottown)
-bg = Maps('map', 0, 470, 150, 640)
+global bg
+bg = Maps(2)
+
 maps.add(bg)
 en = Enemy(200, 200, 1)
 en2 = Enemy(30, 10, 2)
@@ -499,6 +514,7 @@ objects.add(en2)
 objects.add(en1)
 items = pygame.sprite.Group()
 damage_counter = pygame.sprite.Group()
+can_leave = True
 def DropItem(x,y, num):
     itms = {
         43: Water(x, y),
@@ -513,6 +529,7 @@ def mainGame():
     pygame.display.set_caption("Game")
     global dt
     global mouse_angle
+    global bg
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -560,8 +577,23 @@ def mainGame():
             i.x = i.pos[0] - player.x_offset
             i.y = i.pos[1] - player.y_offset
             i.draw(screen)
-
-        #print(f'{player.x - bg.x} : {player.y - bg.y}')
+        pygame.draw.rect(screen, (200,0,0), bg.base)
+        if can_leave:
+            if bg.next_level.colliderect(player.rect):
+                    print('wi')
+                    maps.remove(bg)
+                    bg = Maps(2)
+                    maps.add(bg)
+                    player.x = 300
+                    player.y = 100
+            if bg.base.colliderect(player.rect):
+                    maps.remove(bg)
+                    bg = Maps(1)
+                    maps.add(bg)
+                    player.x = 300
+                    player.y = 100
+                  
+        print(f'{int(player.x - bg.x)} : {int(player.y - bg.y)}')
          #draw the health bar
 
         pygame.draw.line(screen, 'blue', (10, screen.get_height() - 10), (10 +round(((player.xp / player.next_level_xp) * 100), 1), screen.get_height() - 10), width=6)
@@ -594,7 +626,7 @@ def mainMenu():
         x2 -= 30 * dt
         mouse_pos = pygame.mouse.get_pos()
 
-        menu_text = main_font.render("MainMenu", True, "Black")
+        menu_text = main_font.render("Freaky Summer", True, "Black")
         menu_rect = menu_text.get_rect(center=(width/2, height/5))
         screen.blit(menu_text, menu_rect)
 
