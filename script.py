@@ -51,12 +51,12 @@ def rotate_on_pivot(image, angle, pivot, origin):
 #i asked chat gpt to do this cuz we dont have much time YOLO
 #btw i can do it myself but u know i dont need to rn
 class FloatingText(pygame.sprite.Sprite):
-    def __init__(self, text, pos):
+    def __init__(self, text, pos, color):
         super().__init__()
         self.text = text
         self.pos = list(pos)  # Position as [x, y]
         self.font = pygame.font.Font(None, 14)  # Font and size
-        self.color = 'WHITE'
+        self.color = color
         self.speed = -1  # Speed of floating text movement
         self.fade_speed = 4  # Speed of fading out
         self.alpha = 255  # Initial alpha value (fully opaque)
@@ -176,7 +176,7 @@ class Enemy(pygame.sprite.Sprite):
         self.x = x
         self.y = y
         self.level = level
-        self.speed = random.randint(80, 94)
+        self.speed = random.randint(80, 150) 
 
         self.damage = 10 * (1 + (self.level / 5))
         self.health = 15 * (1 + (self.level / 2))
@@ -493,6 +493,7 @@ class Player(pygame.sprite.Sprite):
             self.max_health = int(100 * (1 + (self.level / 10)))
             self.attack_damage = int(self.attack_damage * (1 + (self.level / 8)))
             self.health = self.max_health
+            LevelUP(self)
         if self.health > self.max_health:
             self.health = self.max_health
         if self.sun_bar > self.max_sun_bar:
@@ -510,7 +511,8 @@ class Player(pygame.sprite.Sprite):
 
     def TakeDamage(self, amount):
         self.health -= amount
-        
+def LevelUP(player):
+    damage_counter.add(FloatingText('Level up', [player.x, player.y], 'blue'))
 player = Player(100, 111)
 objects = pygame.sprite.Group()
 #objects.add(player)
@@ -531,7 +533,15 @@ objects.add(en2)
 objects.add(en1)
 items = pygame.sprite.Group()
 damage_counter = pygame.sprite.Group()
-can_leave = True
+can_leave = False
+wave = random.randint(0, 2)
+og_wave = wave
+n_enemies = random.randint(int(player.level), int(player.level * 2.5))
+spawn_time = random.randint(10, 50)
+current_spawn_time = 0
+enemies_spawned = 0
+spwn_speed =  0.05 + abs(wave - og_wave)/ 20
+
 def DropItem(x,y, num):
     itms = {
         43: Water(x, y),
@@ -547,6 +557,14 @@ def mainGame():
     global dt
     global mouse_angle
     global bg
+    global wave
+    global og_wave
+    global can_leave
+    global n_enemies
+    global current_spawn_time
+    global enemies_spawned
+    global spawn_time
+    global spwn_speed
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -559,6 +577,28 @@ def mainGame():
         objects.update(dt)
         bullets.update(dt)
         player.update(dt)
+        if len(objects) == 0 and wave <= 0:
+            can_leave = True
+        else:
+            can_leave = False
+        if len(objects) == 0 and wave > 0:
+            wave -= 1
+            n_enemies = random.randint(int(player.level), int(player.level * 2.5))
+            enemies_spawned = 0
+            spwn_speed =  0.05 + abs(wave - og_wave)/ 20
+
+        current_spawn_time += spwn_speed
+        if n_enemies >= enemies_spawned:
+            if current_spawn_time >= spawn_time:
+                objects.add(Enemy(random.randint(bg.left, bg.right), random.randint(bg.top, bg.bottom), abs(wave - og_wave) + player.level + random.randint(0, 1)))
+                enemies_spawned += 1
+                spawn_time = random.randint(0, 2)
+                current_spawn_time = 0
+
+
+                
+        print(wave)
+                
         for i in maps:
             i.x = i.x - player.x_offset
             i.y = i.y - player.y_offset
@@ -583,7 +623,7 @@ def mainGame():
                if bullet.rect.colliderect(object.rect):
                    bullet.YoungManKillYourself()
                    object.TakeDamage(player.attack_damage)
-                   damage_counter.add(FloatingText(f'{player.attack_damage}', [object.x, object.y]))
+                   damage_counter.add(FloatingText(f'{player.attack_damage}', [object.x, object.y], 'red'))
 
         items.update(player)
         for i in items:
@@ -603,6 +643,8 @@ def mainGame():
                     maps.add(bg)
                     player.x = 300
                     player.y = 100
+                    og_wave = random.randint(player.level, player.level + 4)
+                    wave = og_wave
             if bg.base.colliderect(player.rect):
                     maps.remove(bg)
                     for i in objects:
@@ -612,7 +654,7 @@ def mainGame():
                     player.x = 300
                     player.y = 100
                   
-        print(f'{int(player.x - bg.x)} : {int(player.y - bg.y)}')
+        #print(f'{int(player.x - bg.x)} : {int(player.y - bg.y)}')
          #draw the health bar
 
         pygame.draw.line(screen, 'blue', (10, screen.get_height() - 10), (10 +round(((player.xp / player.next_level_xp) * 100), 1), screen.get_height() - 10), width=6)
