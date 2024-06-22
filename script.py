@@ -6,11 +6,6 @@ from pathfinding.core.grid import Grid
 import csv
 import random
 
-
-
-
-
-
 pygame.init()
 
 size = width, height = 540, 300
@@ -18,11 +13,12 @@ black = 0, 0, 0
 
 screen = pygame.display.set_mode(size, flags=pygame.SCALED)
 
-
-
+main_font = pygame.font.SysFont("cambria", 50)
 clock = pygame.time.Clock()
 dt = 0
 tl = 16
+
+from ui import Button
 
 #save the map array inside a variable
 def load_csv(filename):
@@ -276,38 +272,6 @@ class Maps(pygame.sprite.Sprite):
     def draw(self, screen):
         screen.blit(self.bg, (self.x, self.y))
 
-
-class Button(pygame.sprite.Sprite):
-    def __init__(self, color, x, y, width, height, text=''):
-        super().__init__()
-        self.color = color
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-        self.text = text
-
-    def draw(self, outline=None):
-        # Call this method to draw the button on the screen
-        if outline:
-            pygame.draw.rect(screen, outline, (self.x-2, self.y-2, self.width+4, self.height+4), 0)
-            
-        pygame.draw.rect(screen, self.color, (self.x, self.y, self.width, self.height), 0)
-        
-        if self.text != '':
-            font = pygame.font.SysFont('comicsans', 60)
-            text = font.render(self.text, 1, (0, 0, 0))
-            screen.blit(text, (self.x + (self.width/2 - text.get_width()/2), self.y + (self.height/2 - text.get_height()/2)))
-
-    def isOver(self, pos):
-        # Pos is the mouse position or a tuple of (x, y) coordinates
-        if pos[0] > self.x and pos[0] < self.x + self.width:
-            if pos[1] > self.y and pos[1] < self.y + self.height:
-                return True
-            
-        return False
-
-
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y, mouse_angle):
         super().__init__()
@@ -523,8 +487,8 @@ objects = pygame.sprite.Group()
 bullets = pygame.sprite.Group()
 ui = pygame.sprite.Group()
 maps = pygame.sprite.Group()
-bottown = Button('red', 100, 100, 100, 50, 'hello')
-ui.add(bottown)
+#bottown = Button('red', 100, 100, 100, 50, 'hello')
+#ui.add(bottown)
 bg = Maps('map', 0, 470, 150, 640)
 maps.add(bg)
 en = Enemy(200, 200, 1)
@@ -545,63 +509,117 @@ def DropItem(x,y, num):
     else:
         print('nuh uh')
 
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
+def mainGame():
+    pygame.display.set_caption("Game")
+    global dt
+    global mouse_angle
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
 
-    mouse_pos = pygame.mouse.get_pos()
-    screen.fill(black)
-    mouse_angle = math.degrees(math.atan2(mouse_pos[0] - player.x, mouse_pos[1] - player.y)) 
-    objects.update(dt)
-    bullets.update(dt)
-    player.update(dt)
-    for i in maps:
-        i.x = i.x - player.x_offset
-        i.y = i.y - player.y_offset
+        mouse_pos = pygame.mouse.get_pos()
+        screen.fill(black)
+        mouse_angle = math.degrees(math.atan2(mouse_pos[0] - player.x, mouse_pos[1] - player.y)) 
+        objects.update(dt)
+        bullets.update(dt)
+        player.update(dt)
+        for i in maps:
+            i.x = i.x - player.x_offset
+            i.y = i.y - player.y_offset
+
+            i.draw(screen)
+        for i in objects:
+            i.x = i.x - player.x_offset
+            i.y = i.y - player.y_offset
+            i.draw(screen)
+
+        player.draw()
+        for i in bullets:
+            i.x = i.x - player.x_offset
+            i.y = i.y - player.y_offset
+            i.draw()
+
+        for i in ui:
+            i.draw()
+
+        for bullet in bullets:
+            for object in objects:
+               if bullet.rect.colliderect(object.rect):
+                   bullet.YoungManKillYourself()
+                   object.TakeDamage(player.attack_damage)
+                   damage_counter.add(FloatingText(f'{player.attack_damage}', [object.x, object.y]))
+
+        items.update(player)
+        for i in items:
+            i.x = i.x - player.x_offset
+            i.y = i.y - player.y_offset
+            i.draw()
+        for i in damage_counter:
+            i.x = i.pos[0] - player.x_offset
+            i.y = i.pos[1] - player.y_offset
+            i.draw(screen)
+
+        #print(f'{player.x - bg.x} : {player.y - bg.y}')
+         #draw the health bar
+
+        pygame.draw.line(screen, 'blue', (10, screen.get_height() - 10), (10 +round(((player.xp / player.next_level_xp) * 100), 1), screen.get_height() - 10), width=6)
+        screen.blit(pygame.image.load('xp_bar.png'), pygame.image.load('xp_bar.png').get_rect(topleft=(7,  screen.get_height() - 20)))
+        pygame.draw.line(screen, 'red', (10, 10), (10 + (player.health / player.max_health) * 100, 10), width=4)
+        pygame.draw.line(screen, 'yellow', (10, 20), (10 + player.sun_bar, 20), width=4)
+
+        pygame.display.flip()
+
+
+        dt = clock.tick(60) / 1000
+
+def mainMenu():
+    pygame.display.set_caption("Menu")
+    global dt
+    global mouse_angle
+    BG = pygame.image.load("Ocean.png")
+    BG = pygame.transform.scale(BG, (width*2, height*1.1))
+    BG2 = pygame.transform.scale(BG, (width*2, height*1.1))
+    x = 0
+    x2 = width*2
+    while True:
+        screen.blit(BG, (x, 0))
+        screen.blit(BG, (x2, 0)) #Moves 2 background Images in a way that it looks seamless
+        if x < 3*width*-1:
+            x = width
+        if x2 < 3*width*-1:
+            x2 = width
+        x -= 30 * dt
+        x2 -= 30 * dt
+        mouse_pos = pygame.mouse.get_pos()
+
+        menu_text = main_font.render("MainMenu", True, "Black")
+        menu_rect = menu_text.get_rect(center=(width/2, height/5))
+        screen.blit(menu_text, menu_rect)
+
+        play__btn = Button(image=None, pos=(width/2, height/2), 
+                            text_input="PLAY", font=main_font, base_color="Black", hovering_color="#5b5b5b")
+        quit_btn = Button(image=None, pos=(width/2, height/1.4), 
+                            text_input="QUIT", font=main_font, base_color="Black", hovering_color="#5b5b5b")
         
-        i.draw(screen)
-    for i in objects:
-        i.x = i.x - player.x_offset
-        i.y = i.y - player.y_offset
-        i.draw(screen)
+        for button in [play__btn, quit_btn]:
+            button.changeColor(mouse_pos)
+            button.update(screen)
 
-    player.draw()
-    for i in bullets:
-        i.x = i.x - player.x_offset
-        i.y = i.y - player.y_offset
-        i.draw()
-    
-    for i in ui:
-        i.draw()
-    
-    for bullet in bullets:
-        for object in objects:
-           if bullet.rect.colliderect(object.rect):
-               bullet.YoungManKillYourself()
-               object.TakeDamage(player.attack_damage)
-               damage_counter.add(FloatingText(f'{player.attack_damage}', [object.x, object.y]))
-    
-    items.update(player)
-    for i in items:
-        i.x = i.x - player.x_offset
-        i.y = i.y - player.y_offset
-        i.draw()
-    for i in damage_counter:
-        i.x = i.pos[0] - player.x_offset
-        i.y = i.pos[1] - player.y_offset
-        i.draw(screen)
-              
-    #print(f'{player.x - bg.x} : {player.y - bg.y}')
-     #draw the health bar
-    
-    pygame.draw.line(screen, 'blue', (10, screen.get_height() - 10), (10 +round(((player.xp / player.next_level_xp) * 100), 1), screen.get_height() - 10), width=6)
-    screen.blit(pygame.image.load('xp_bar.png'), pygame.image.load('xp_bar.png').get_rect(topleft=(7,  screen.get_height() - 20)))
-    pygame.draw.line(screen, 'red', (10, 10), (10 + (player.health / player.max_health) * 100, 10), width=4)
-    pygame.draw.line(screen, 'yellow', (10, 20), (10 + player.sun_bar, 20), width=4)
-    
-    pygame.display.flip()
+        pygame.display.flip()
+        dt = clock.tick(60) / 1000
 
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if play__btn.checkForInput(mouse_pos):
+                    mainGame()
+                if quit_btn.checkForInput(mouse_pos):
+                    pygame.quit()
+                    sys.exit()
 
-    dt = clock.tick(60) / 1000
+#mainGame()
+mainMenu()
