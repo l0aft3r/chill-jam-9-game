@@ -180,7 +180,7 @@ class Enemy(pygame.sprite.Sprite):
 
         self.takingDamage = False
         self.whiteFrames = 0
-        self.maxWhiteFrames = 2
+        self.maxWhiteFrames = 6
 
         self.damage = 10 * (1 + (self.level / 5))
         self.health = 15 * (1 + (self.level / 2))
@@ -429,6 +429,7 @@ class Player(pygame.sprite.Sprite):
         self.attack_damage = int(5 * (1 + (self.level / 11)))
         self.n_bullet = 1
         self.startfish = 0
+        self.tfont = pygame.font.Font('font.ttf', 20)
     def update(self, dt):
         self.time -= dt
         if self.run:
@@ -528,7 +529,7 @@ class Player(pygame.sprite.Sprite):
            print('sun damage')
            self.sun_bar -=1
            self.time = 5
-           
+        self.starfish_n = self.tfont.render(f'{self.startfish}', False, (0,0,0))
         #kill the player when health reaches 0
         if self.health <= 0 or self.sun_bar <= 0:
             pygame.sprite.Sprite.kill(self)
@@ -552,6 +553,7 @@ class Player(pygame.sprite.Sprite):
             
     def draw(self):
         screen.blit(self.startfish_image, (screen.get_width() - 64, 10))
+        screen.blit(self.starfish_n, (screen.get_width() - 32, 10))
         self.gun_rotate, self.gun_rect = rotate_on_pivot(pygame.transform.flip(self.gun, self.flipping_gun, False), mouse_angle, (self.x, self.y), (self.x, self.y + 14))
         screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
         screen.blit(self.gun_rotate, self.gun_rect)
@@ -586,6 +588,8 @@ spawn_time = random.randint(40, 100)
 current_spawn_time = 0
 enemies_spawned = 0
 spwn_speed =  0.05 + abs(wave - og_wave)/ 20
+
+
 
 def DropItem(x,y, num):
     itms = {
