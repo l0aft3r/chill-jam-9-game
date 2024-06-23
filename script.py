@@ -459,6 +459,7 @@ class Player(pygame.sprite.Sprite):
         self.xp_font = pygame.font.Font('font.ttf', 15)
         self.bullet_speed = 200
         self.dead = False
+        self.can_move = True
     def update(self, dt):
         self.time -= dt
         if self.run:
@@ -497,52 +498,53 @@ class Player(pygame.sprite.Sprite):
         keys = pygame.key.get_pressed()
 
         self.rect = self.image.get_rect(center=(self.x, self.y))   
-        if keys[pygame.K_w] and self.y <= self.limiy:
-            self.yy -= self.speed * dt
-            self.run = True
-            if self.up:
-                self.yy += self.speed * dt
-            
-        elif keys[pygame.K_s]and self.y >= screen.get_height() - self.limiy:
-            self.yy += self.speed * dt
-            self.run = True
-            if self.down:
+        if self.can_move:
+            if keys[pygame.K_w] and self.y <= self.limiy:
                 self.yy -= self.speed * dt
-        if keys[pygame.K_a] and self.x <= self.limitx:
-            self.xx -= self.speed * dt
-            self.flip = False
-            self.run = True
-            if self.left:
-                self.xx += self.speed * dt
-        elif keys[pygame.K_d] and self.x >= screen.get_width()- self.limitx:
-            self.xx += self.speed * dt
-            self.flip = True
-            self.run = True
-            if self.right:
+                self.run = True
+                if self.up:
+                    self.yy += self.speed * dt
+                
+            elif keys[pygame.K_s]and self.y >= screen.get_height() - self.limiy:
+                self.yy += self.speed * dt
+                self.run = True
+                if self.down:
+                    self.yy -= self.speed * dt
+            if keys[pygame.K_a] and self.x <= self.limitx:
                 self.xx -= self.speed * dt
+                self.flip = False
+                self.run = True
+                if self.left:
+                    self.xx += self.speed * dt
+            elif keys[pygame.K_d] and self.x >= screen.get_width()- self.limitx:
+                self.xx += self.speed * dt
+                self.flip = True
+                self.run = True
+                if self.right:
+                    self.xx -= self.speed * dt
 
-        if keys[pygame.K_w]and self.y >= self.limiy:
-            self.y -= self.speed * dt
-            self.run = True
-            if self.up:
-                self.y += self.speed * dt
-        elif keys[pygame.K_s]and self.y <= screen.get_height() - self.limiy:
-            self.y += self.speed * dt
-            self.run = True
-            if self.down:
+            if keys[pygame.K_w]and self.y >= self.limiy:
                 self.y -= self.speed * dt
-        if keys[pygame.K_a]and self.x >= self.limitx:
-            self.x -= self.speed * dt
-            self.flip = False
-            self.run = True
-            if self.left:
-                self.x += self.speed * dt
-        elif keys[pygame.K_d]and self.x <= screen.get_width()- self.limitx:
-            self.x += self.speed * dt
-            self.flip = True
-            self.run = True
-            if self.right:
+                self.run = True
+                if self.up:
+                    self.y += self.speed * dt
+            elif keys[pygame.K_s]and self.y <= screen.get_height() - self.limiy:
+                self.y += self.speed * dt
+                self.run = True
+                if self.down:
+                    self.y -= self.speed * dt
+            if keys[pygame.K_a]and self.x >= self.limitx:
                 self.x -= self.speed * dt
+                self.flip = False
+                self.run = True
+                if self.left:
+                    self.x += self.speed * dt
+            elif keys[pygame.K_d]and self.x <= screen.get_width()- self.limitx:
+                self.x += self.speed * dt
+                self.flip = True
+                self.run = True
+                if self.right:
+                    self.x -= self.speed * dt
   
         self.x_offset = self.xx
         self.y_offset = self.yy
@@ -576,14 +578,14 @@ class Player(pygame.sprite.Sprite):
             self.health = self.max_health
         if self.sun_bar > self.max_sun_bar:
             self.health = self.max_sun_bar
+
         if self.health <= 0:
             self.dead = True
         else:
             self.dead = False
             self.can_move = True
             
-        if self.dead == True:
-            self.DeathScreen()
+
 
         return (self.x_offset, self.y_offset)
     
@@ -591,7 +593,8 @@ class Player(pygame.sprite.Sprite):
 
 
             
-    def draw(self):
+    def draw(self, mouse_pos):
+        
         screen.blit(self.startfish_image, (screen.get_width() - 64, 10))
         screen.blit(self.starfish_n, (screen.get_width() - 32, 10))
         screen.blit(self.level_image, (10, screen.get_height() - 60))
@@ -600,9 +603,32 @@ class Player(pygame.sprite.Sprite):
         self.gun_rotate, self.gun_rect = rotate_on_pivot(pygame.transform.flip(self.gun, self.flipping_gun, False), mouse_angle, (self.x, self.y), (self.x, self.y + 14))
         screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
         screen.blit(self.gun_rotate, self.gun_rect)
-    def DeathScreen(self):
+        if self.dead == True:
+            self.can_move = True
+            self.DeathScreen(mouse_pos)
+        
+    def DeathScreen(self, mouse_pos):
         self.can_move = False
-
+        self.death_font = pygame.font.Font('font.ttf', 40)
+        self.death_font2 = pygame.font.Font('font.ttf', 30)
+        self.death_text = self.death_font.render("You're too dead to be alive gg", False, 'black')
+        screen.blit(self.death_text, (100, screen.get_height() // 4))
+        self.respawn = Button(pygame.image.load('up.png').convert_alpha(), (200, 150), 'Back to Base', self.death_font2, 'white', (200, 200, 200))
+        self.quit = Button(pygame.image.load('up.png').convert_alpha(), (420, 150), 'quit game', self.death_font2, 'white', (200, 200, 200))
+        self.respawn.update(screen)
+        self.quit.update(screen)
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if self.respawn.checkForInput(mouse_pos):
+                    self.health = self.max_health
+                    self.x = 200
+                    self.y  = 150
+                    self.startfish -= int(self.startfish // 3)
+                    self.dead = False
+                if self.quit.checkForInput(mouse_pos):
+                    pygame.quit()
+                    sys.exit()
+                
     def TakeDamage(self, amount):
         self.health -= amount
 def LevelUP(player):
@@ -708,7 +734,7 @@ def mainGame():
             i.y = i.y - player.y_offset
             i.draw(screen)
 
-        player.draw()
+        player.draw(mouse_pos)
         for i in bullets:
             i.x = i.x - player.x_offset
             i.y = i.y - player.y_offset
@@ -799,7 +825,6 @@ def mainGame():
                         increase_bullet_speed.level = increase_bullet_speed.level * 3 + random.randint(1, 5)
                         player.bullet_speed +=30
 
-        print(player.bullet_speed)
         pygame.display.flip()
 
 
