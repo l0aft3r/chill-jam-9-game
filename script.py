@@ -246,6 +246,7 @@ class Enemy(pygame.sprite.Sprite):
     def YoungManKillYourself(self):
         player.xp += 15 * (self.level * 1.6)
         DropItem(self.x, self.y, random.randint(0, 60))
+        player.startfish += random.randint(player.level * 2, player.level * 6)
         self.kill()
     def TakeDamage(self, attack_damage):
 
@@ -383,6 +384,7 @@ class Player(pygame.sprite.Sprite):
         self.max_sun_bar = 100
         self.pressed = False
         self.time = 5
+        self.startfish_image = pygame.image.load('starfish.png')
         self.images = [
             pygame.image.load("running\Sprite-0002.1.png").convert_alpha(),
             pygame.image.load("running\Sprite-0002.2.png").convert_alpha(),
@@ -416,6 +418,7 @@ class Player(pygame.sprite.Sprite):
         self.left = False
         self.attack_damage = int(5 * (1 + (self.level / 11)))
         self.n_bullet = 1
+        self.startfish = 0
     def update(self, dt):
         self.time -= dt
         if self.run:
@@ -538,6 +541,7 @@ class Player(pygame.sprite.Sprite):
 
             
     def draw(self):
+        screen.blit(self.startfish_image, (screen.get_width() - 64, 10))
         self.gun_rotate, self.gun_rect = rotate_on_pivot(pygame.transform.flip(self.gun, self.flipping_gun, False), mouse_angle, (self.x, self.y), (self.x, self.y + 14))
         screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
         screen.blit(self.gun_rotate, self.gun_rect)
@@ -612,21 +616,24 @@ def mainGame():
         player.update(dt)
         if len(objects) == 0 and wave <= 0:
             can_leave = True
+        elif bg.map == 1:
+            can_leave = False
         else:
             can_leave = False
-        if len(objects) == 0 and wave > 0:
+        if len(objects) == 0 and wave > 0 and not bg.map == 1:
             wave -= 1
             n_enemies = random.randint(int(player.level), int(player.level * 2.5))
             enemies_spawned = 0
             spwn_speed =  0.05 + abs(wave - og_wave)/ 20
 
         current_spawn_time += spwn_speed
-        if n_enemies >= enemies_spawned:
-            if current_spawn_time >= spawn_time:
-                objects.add(Enemy(random.randint(bg.left, bg.right), random.randint(bg.top, bg.bottom), abs(wave - og_wave) + player.level + random.randint(0, 1)))
-                enemies_spawned += 1
-                spawn_time = random.randint(0, 2)
-                current_spawn_time = 0
+        if not bg.map == 1:
+                if n_enemies >= enemies_spawned:
+                    if current_spawn_time >= spawn_time:
+                        objects.add(Enemy(random.randint(bg.left, bg.right), random.randint(bg.top, bg.bottom), abs(wave - og_wave) + player.level + random.randint(0, 1)))
+                        enemies_spawned += 1
+                        spawn_time = random.randint(0, 2)
+                        current_spawn_time = 0
 
         print(wave)
         for i in maps:
@@ -686,7 +693,7 @@ def mainGame():
                   
         #print(f'{int(player.x - bg.x)} : {int(player.y - bg.y)}')
          #draw the health bar
-
+        
         pygame.draw.line(screen, 'blue', (10, screen.get_height() - 10), (10 +round(((player.xp / player.next_level_xp) * 100), 1), screen.get_height() - 10), width=6)
         screen.blit(pygame.image.load('xp_bar.png'), pygame.image.load('xp_bar.png').get_rect(topleft=(7,  screen.get_height() - 20)))
         pygame.draw.line(screen, 'red', (10, 10), (10 + (player.health / player.max_health) * 100, 10), width=4)
