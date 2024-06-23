@@ -177,7 +177,10 @@ class Enemy(pygame.sprite.Sprite):
         self.y = y
         self.level = level
         self.speed = random.randint(80, 150) 
+
         self.takingDamage = False
+        self.whiteFrames = 0
+        self.maxWhiteFrames = 2
 
         self.damage = 10 * (1 + (self.level / 5))
         self.health = 15 * (1 + (self.level / 2))
@@ -241,7 +244,9 @@ class Enemy(pygame.sprite.Sprite):
         brighten = 255
         if self.takingDamage:
             self.image.fill((brighten, brighten, brighten), special_flags=pygame.BLEND_RGB_ADD)
-            self.takingDamage = False
+            self.whiteFrames += 1
+            if self.whiteFrames >= self.maxWhiteFrames:
+                self.takingDamage = False
         self.rect = self.image.get_rect(center=(self.x, self.y))
         if self.health <= 0:
             self.YoungManKillYourself()
@@ -253,6 +258,7 @@ class Enemy(pygame.sprite.Sprite):
         self.kill()
     def TakeDamage(self, attack_damage):
         self.takingDamage = True
+        self.whiteFrames = 0
         self.health -= attack_damage
     def draw(self, screen):
         if self.health < self.max_health:
