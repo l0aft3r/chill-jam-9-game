@@ -2,13 +2,13 @@ import sys
 import pygame
 import math
 import time
-from pathfinding.core.grid import Grid
 import csv
 import random
 
+
 pygame.init()
 
-size = width, height = 540, 300
+size = width, height = 600, 300
 black = 0, 0, 0
 
 screen = pygame.display.set_mode(size, flags=pygame.SCALED)
@@ -18,7 +18,7 @@ clock = pygame.time.Clock()
 dt = 0
 tl = 16
 
-from ui import Button
+from ui import Button, UpgradeButton
 
 #save the map array inside a variable
 def load_csv(filename):
@@ -138,6 +138,32 @@ class Sunscreen(pygame.sprite.Sprite):
     def draw(self):
         screen.blit(self.image, (self.x, self.y))
 """
+
+class UpgradeShop(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.image = pygame.image.load('shop1.png').convert_alpha()
+        self.rect = self.image.get_rect(center=(self.x, self.y))
+    def update(self, keys):
+        self.rect = self.image.get_rect(center=(self.x, self.y))
+        if self.rect.colliderect(player.rect):
+            screen.blit(pygame.transform.scale(pygame.image.load('button.png').convert_alpha(), (16,16)), (self.rect.center[0] -8, self.rect.center[1] - 32))
+            if self.upgrade_opened == False:
+                if keys[pygame.K_e]:
+                    print('opened menu')
+                    self.upgrade_opened = True
+        else:
+            self.upgrade_opened = False
+        screen.blit(self.image, self.rect)
+        return self.upgrade_opened
+
+
+
+
+        
+
 class Water(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
@@ -368,7 +394,6 @@ class Bullet(pygame.sprite.Sprite):
         #life time of the bullet
         self.lifetime -= dt
         if self.lifetime <= 0:
-            print('deleting')
             self.YoungManKillYourself()
     def YoungManKillYourself(self):
         self.kill()
@@ -394,7 +419,8 @@ class Player(pygame.sprite.Sprite):
         self.max_sun_bar = 100
         self.pressed = False
         self.time = 5
-        self.startfish_image = pygame.image.load('starfish.png')
+        self.level_image = pygame.image.load('level.png').convert_alpha()
+        self.startfish_image = pygame.image.load('starfish.png').convert_alpha()
         self.images = [
             pygame.image.load("running\Sprite-0002.1.png").convert_alpha(),
             pygame.image.load("running\Sprite-0002.2.png").convert_alpha(),
@@ -414,7 +440,7 @@ class Player(pygame.sprite.Sprite):
         self.gun = pygame.image.load("guns\Sprite-0001.png").convert_alpha()
         self.gun_rect = self.image.get_rect(center = (self.x, self.y))
         self.last_fired = time.time()
-        self.fire_cooldown = 0.1
+        self.fire_cooldown = 0.5
         self.yy = 0
         self.xx = 0
         self.flip = False
@@ -428,8 +454,11 @@ class Player(pygame.sprite.Sprite):
         self.left = False
         self.attack_damage = int(5 * (1 + (self.level / 11)))
         self.n_bullet = 1
-        self.startfish = 0
+        self.startfish = 9999
         self.tfont = pygame.font.Font('font.ttf', 20)
+        self.xp_font = pygame.font.Font('font.ttf', 15)
+        self.bullet_speed = 200
+        self.dead = False
     def update(self, dt):
         self.time -= dt
         if self.run:
@@ -461,7 +490,7 @@ class Player(pygame.sprite.Sprite):
         self.image = self.images[int(self.current_image)]
         if pygame.mouse.get_pressed()[0] and time.time() - self.last_fired > self.fire_cooldown:
             for i in range(self.n_bullet):
-                bullet = Bullet(self.gun_rect.x ,self.gun_rect.y, mouse_angle * (1 + (i /10)), 300)
+                bullet = Bullet(self.gun_rect.x ,self.gun_rect.y, mouse_angle * (1 + (i /10)), self.bullet_speed)
                 bullets.add(bullet)
             self.last_fired = time.time()
             #self.pressed = True
@@ -530,6 +559,8 @@ class Player(pygame.sprite.Sprite):
            self.sun_bar -=1
            self.time = 5
         self.starfish_n = self.tfont.render(f'{self.startfish}', False, (0,0,0))
+        self.level_text = self.tfont.render(f'{self.level}', False, 'black')
+        self.xp_text = self.xp_font.render(f'{int(self.xp)}/ {int(self.next_level_xp)}', False, 'black')
         #kill the player when health reaches 0
         if self.health <= 0 or self.sun_bar <= 0:
             pygame.sprite.Sprite.kill(self)
@@ -539,12 +570,21 @@ class Player(pygame.sprite.Sprite):
             self.level +=1
             self.max_health = int(100 * (1 + (self.level / 10)))
             self.attack_damage = int(self.attack_damage * (1 + (self.level / 8)))
-            self.health = self.max_health
+            self.health += (self.max_health) / 4
             LevelUP(self)
         if self.health > self.max_health:
             self.health = self.max_health
         if self.sun_bar > self.max_sun_bar:
             self.health = self.max_sun_bar
+        if self.health <= 0:
+            self.dead = True
+        else:
+            self.dead = False
+            self.can_move = True
+            
+        if self.dead == True:
+            self.DeathScreen()
+
         return (self.x_offset, self.y_offset)
     
 
@@ -554,9 +594,14 @@ class Player(pygame.sprite.Sprite):
     def draw(self):
         screen.blit(self.startfish_image, (screen.get_width() - 64, 10))
         screen.blit(self.starfish_n, (screen.get_width() - 32, 10))
+        screen.blit(self.level_image, (10, screen.get_height() - 60))
+        screen.blit(self.level_text, (26, screen.get_height() - 50))
+        screen.blit(self.xp_text, (130, screen.get_height() - 16))
         self.gun_rotate, self.gun_rect = rotate_on_pivot(pygame.transform.flip(self.gun, self.flipping_gun, False), mouse_angle, (self.x, self.y), (self.x, self.y + 14))
         screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
         screen.blit(self.gun_rotate, self.gun_rect)
+    def DeathScreen(self):
+        self.can_move = False
 
     def TakeDamage(self, amount):
         self.health -= amount
@@ -572,12 +617,6 @@ maps = pygame.sprite.Group()
 bg = Maps(2)
 
 maps.add(bg)
-en = Enemy(200, 200, 1)
-en2 = Enemy(30, 10, 2)
-en1 = Enemy(500, 300, 3)
-objects.add(en)
-objects.add(en2)
-objects.add(en1)
 items = pygame.sprite.Group()
 damage_counter = pygame.sprite.Group()
 can_leave = False
@@ -588,9 +627,20 @@ spawn_time = random.randint(40, 100)
 current_spawn_time = 0
 enemies_spawned = 0
 spwn_speed =  0.05 + abs(wave - og_wave)/ 20
-
-
-
+shop = UpgradeShop(130, 130)
+shop_font = pygame.font.Font('font.ttf', 15)
+currency = pygame.transform.scale(pygame.image.load('starfish.png'), (12, 12))
+increase_bullet_count = UpgradeButton(pygame.image.load('up.png'), (380, 138 -24), 'Increase bullet count', shop_font, 'white', (230, 230, 230), currency, 400, 4)
+increase_bullet_speed = UpgradeButton(pygame.image.load('up.png'), (380, 40), 'Increase bullet speed', shop_font, 'white', (230, 230, 230), currency, 12, 1)
+increase_max_health = UpgradeButton(pygame.image.load('up.png'), (380, 284 -24), 'Increase max health', shop_font, 'white', (230, 230, 230), currency, 100, 1)
+decrease_bullet_cooldown = UpgradeButton(pygame.image.load('up.png'), (380, 212 -24), 'Decrease bullet cooldown', shop_font, 'white', (230, 230, 230), currency, 12, 1)
+shop_buttons = [
+    increase_bullet_count,
+    increase_bullet_speed,
+    decrease_bullet_cooldown,
+    increase_max_health
+    ]
+upgrade_opened = False
 def DropItem(x,y, num):
     itms = {
         43: Water(x, y),
@@ -614,6 +664,7 @@ def mainGame():
     global enemies_spawned
     global spawn_time
     global spwn_speed
+    global upgrade_opened
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -647,7 +698,6 @@ def mainGame():
                         spawn_time = random.randint(0, 2)
                         current_spawn_time = 0
 
-        print(wave)
         for i in maps:
             i.x = i.x - player.x_offset
             i.y = i.y - player.y_offset
@@ -702,7 +752,12 @@ def mainGame():
                     maps.add(bg)
                     player.x = 300
                     player.y = 100
-                  
+        if bg.map == 1:
+            shop.x = 60 + bg.x - player.x_offset
+            shop.y = 60 + bg.y - player.y_offset
+            shop.update(keys = pygame.key.get_pressed())
+            upgrade_opened = shop.update(keys = pygame.key.get_pressed())
+        
         #print(f'{int(player.x - bg.x)} : {int(player.y - bg.y)}')
          #draw the health bar
         
@@ -710,7 +765,41 @@ def mainGame():
         screen.blit(pygame.image.load('xp_bar.png'), pygame.image.load('xp_bar.png').get_rect(topleft=(7,  screen.get_height() - 20)))
         pygame.draw.line(screen, 'red', (10, 10), (10 + (player.health / player.max_health) * 100, 10), width=4)
         pygame.draw.line(screen, 'yellow', (10, 20), (10 + player.sun_bar, 20), width=4)
+        if upgrade_opened:
+            for i in shop_buttons:
+                i.update(screen)
+                i.changeColor(mouse_pos)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if increase_max_health.checkForInput(mouse_pos):
+                    if player.startfish >= increase_max_health.cost and player.level >= increase_max_health.level:
+                        player.startfish -= increase_max_health.cost
+                        increase_max_health.cost = increase_max_health.cost * 4
+                        increase_max_health.level = increase_max_health.level * random.randint(1, 3)
+                        player.health += player.max_health / 3
+                if decrease_bullet_cooldown.checkForInput(mouse_pos):
+                    if player.startfish >= decrease_bullet_cooldown.cost and player.level >= decrease_bullet_cooldown.level:
+                        player.startfish -= decrease_bullet_cooldown.cost
+                        decrease_bullet_cooldown.cost = int(pow(decrease_bullet_cooldown.cost, 2) * 1.5)
+                        decrease_bullet_cooldown.level = decrease_bullet_cooldown.level * 4 + random.randint(1, 5)
+                        player.fire_cooldown -= 0.04
+                if increase_bullet_count.checkForInput(mouse_pos):
+                    if player.startfish >= increase_bullet_count.cost and player.level >= increase_bullet_count.level:
+                        player.startfish -= increase_bullet_count.cost
+                        increase_bullet_count.cost = int(pow(increase_bullet_count.cost, 2) * 1.5)
+                        increase_bullet_count.level = increase_bullet_count.level * 3 + random.randint(1, 5)
+                        player.n_bullet +=1               
+                if increase_bullet_speed.checkForInput(mouse_pos):
+                    if player.startfish >= increase_bullet_speed.cost and player.level >= increase_bullet_speed.level:
+                        player.startfish -= increase_bullet_speed.cost
+                        increase_bullet_speed.cost = pow(increase_bullet_speed.cost, 2)
+                        increase_bullet_speed.level = increase_bullet_speed.level * 3 + random.randint(1, 5)
+                        player.bullet_speed +=30
 
+        print(player.bullet_speed)
         pygame.display.flip()
 
 
