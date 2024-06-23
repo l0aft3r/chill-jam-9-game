@@ -560,9 +560,7 @@ objects = pygame.sprite.Group()
 bullets = pygame.sprite.Group()
 ui = pygame.sprite.Group()
 maps = pygame.sprite.Group()
-#bottown = Button('red', 100, 100, 100, 50, 'hello')
-#ui.add(bottown)
-global bg
+
 bg = Maps(2)
 
 maps.add(bg)
@@ -665,7 +663,7 @@ def mainGame():
                    bullet.YoungManKillYourself()
                    object.TakeDamage(player.attack_damage)
                    damage_counter.add(FloatingText(f'{player.attack_damage}', [object.x, object.y], 'red'))
-
+        
         items.update(player)
         for i in items:
             i.x = i.x - player.x_offset
