@@ -667,6 +667,7 @@ shop_buttons = [
     increase_max_health
     ]
 upgrade_opened = False
+is_paused = False
 def DropItem(x,y, num):
     itms = {
         43: Water(x, y),
@@ -691,18 +692,31 @@ def mainGame():
     global spawn_time
     global spwn_speed
     global upgrade_opened
+    global is_paused
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    if is_paused:
+                        is_paused = False
+                        player.can_move = False
+                    else:
+                        is_paused = True
+                        player.can_move = True
 
         mouse_pos = pygame.mouse.get_pos()
         screen.fill(black)
         mouse_angle = math.degrees(math.atan2(mouse_pos[0] - player.x, mouse_pos[1] - player.y)) 
-        objects.update(dt)
-        bullets.update(dt)
-        player.update(dt)
+        """Pausing the game when pressing ESC"""
+
+        if not is_paused:
+            objects.update(dt)
+            bullets.update(dt)
+            player.update(dt)
+
         if len(objects) == 0 and wave <= 0:
             can_leave = True
         elif bg.map == 1:
@@ -723,21 +737,23 @@ def mainGame():
                         enemies_spawned += 1
                         spawn_time = random.randint(0, 2)
                         current_spawn_time = 0
-
         for i in maps:
-            i.x = i.x - player.x_offset
-            i.y = i.y - player.y_offset
+            if not is_paused:
+                i.x = i.x - player.x_offset
+                i.y = i.y - player.y_offset
 
             i.draw(screen)
         for i in objects:
-            i.x = i.x - player.x_offset
-            i.y = i.y - player.y_offset
+            if not is_paused:
+                i.x = i.x - player.x_offset
+                i.y = i.y - player.y_offset
             i.draw(screen)
 
         player.draw(mouse_pos)
         for i in bullets:
-            i.x = i.x - player.x_offset
-            i.y = i.y - player.y_offset
+            if not is_paused:
+                i.x = i.x - player.x_offset
+                i.y = i.y - player.y_offset
             i.draw()
 
         for i in ui:
