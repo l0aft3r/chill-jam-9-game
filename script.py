@@ -332,7 +332,15 @@ class Maps(pygame.sprite.Sprite):
             self.bottom = 410
             self.left = 110
             self.right = 640
-
+    def BackToBase(self):
+        self.map = 1
+        self.bg = pygame.image.load(f'maps\{self.map}.png')
+        if self.map == 1:
+            self.top = 80
+            self.bottom = 430
+            self.left = 0
+            self.right = 470
+        objects.empty()
     def draw(self, screen):
         self.base = pygame.Rect(620 + self.x - player.x_offset, 100 + self.y - player.y_offset, 30, 100)
         if self.map == 1:
@@ -454,7 +462,7 @@ class Player(pygame.sprite.Sprite):
         self.left = False
         self.attack_damage = int(5 * (1 + (self.level / 11)))
         self.n_bullet = 1
-        self.startfish = 9999
+        self.startfish = 0
         self.tfont = pygame.font.Font('font.ttf', 20)
         self.xp_font = pygame.font.Font('font.ttf', 15)
         self.bullet_speed = 200
@@ -623,6 +631,7 @@ class Player(pygame.sprite.Sprite):
                     self.health = self.max_health
                     self.x = 200
                     self.y  = 150
+                    bg.BackToBase()
                     self.startfish -= int(self.startfish // 3)
                     self.dead = False
                 if self.quit.checkForInput(mouse_pos):
@@ -824,11 +833,12 @@ def mainGame():
                         increase_bullet_speed.cost = pow(increase_bullet_speed.cost, 2)
                         increase_bullet_speed.level = increase_bullet_speed.level * 3 + random.randint(1, 5)
                         player.bullet_speed +=30
-
+ 
         pygame.display.flip()
 
 
         dt = clock.tick(60) / 1000
+
 
 def mainMenu():
     pygame.display.set_caption("Menu")
@@ -862,10 +872,9 @@ def mainMenu():
         for button in [play__btn, quit_btn]:
             button.changeColor(mouse_pos)
             button.update(screen)
-
+        
         pygame.display.flip()
         dt = clock.tick(60) / 1000
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
