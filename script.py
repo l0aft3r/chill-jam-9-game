@@ -152,7 +152,6 @@ class UpgradeShop(pygame.sprite.Sprite):
             screen.blit(pygame.transform.scale(pygame.image.load('button.png').convert_alpha(), (16,16)), (self.rect.center[0] -8, self.rect.center[1] - 32))
             if self.upgrade_opened == False:
                 if keys[pygame.K_e]:
-                    print('opened menu')
                     self.upgrade_opened = True
         else:
             self.upgrade_opened = False
@@ -557,7 +556,6 @@ class Player(pygame.sprite.Sprite):
 
         #drains the sun bar every 5 seconds
         if self.time <= 0:
-           print('sun damage')
            self.sun_bar -=1
            self.time = 5
         self.starfish_n = self.tfont.render(f'{self.startfish}', False, (0,0,0))
@@ -593,7 +591,7 @@ class Player(pygame.sprite.Sprite):
 
 
             
-    def draw(self, mouse_pos):
+    def draw(self, mouse_pos, event):
         
         screen.blit(self.startfish_image, (screen.get_width() - 64, 10))
         screen.blit(self.starfish_n, (screen.get_width() - 32, 10))
@@ -605,9 +603,9 @@ class Player(pygame.sprite.Sprite):
         screen.blit(self.gun_rotate, self.gun_rect)
         if self.dead == True:
             self.can_move = True
-            self.DeathScreen(mouse_pos)
+            self.DeathScreen(mouse_pos, event)
         
-    def DeathScreen(self, mouse_pos):
+    def DeathScreen(self, mouse_pos, event):
         self.can_move = False
         self.death_font = pygame.font.Font('font.ttf', 40)
         self.death_font2 = pygame.font.Font('font.ttf', 30)
@@ -617,17 +615,20 @@ class Player(pygame.sprite.Sprite):
         self.quit = Button(pygame.image.load('up.png').convert_alpha(), (420, 150), 'quit game', self.death_font2, 'white', (200, 200, 200))
         self.respawn.update(screen)
         self.quit.update(screen)
-        for event in pygame.event.get():
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if self.respawn.checkForInput(mouse_pos):
-                    self.health = self.max_health
-                    self.x = 200
-                    self.y  = 150
-                    self.startfish -= int(self.startfish // 3)
-                    self.dead = False
-                if self.quit.checkForInput(mouse_pos):
-                    pygame.quit()
-                    sys.exit()
+        
+        if event == pygame.MOUSEBUTTONDOWN:
+            if self.respawn.checkForInput(mouse_pos):
+                self.health = self.max_health
+                self.x = 200
+                self.y  = 150
+                self.startfish -= int(self.startfish // 3)
+                self.dead = False
+            if self.quit.checkForInput(mouse_pos):
+                pygame.quit()
+                sys.exit()
+
+    #def PauseScreen(self, screen):
+    #    pygame.draw.rect(screen, color, pygame.Rect(30, 30, 60, 60))
                 
     def TakeDamage(self, amount):
         self.health -= amount
@@ -666,6 +667,12 @@ shop_buttons = [
     decrease_bullet_cooldown,
     increase_max_health
     ]
+
+"""Pause Menu"""
+resume_btn = Button(pygame.image.load("pausemenubtn.png"), (width, height), "Resume", main_font, "White", (200, 200, 200))
+
+pause_menu_btns = [resume_btn]
+
 upgrade_opened = False
 is_paused = False
 def DropItem(x,y, num):
@@ -676,7 +683,7 @@ def DropItem(x,y, num):
     if num == 43 or num == 6:
         items.add(itms[num])
     else:
-        print('nuh uh')
+        pass
 
 def mainGame():
     pygame.display.set_caption("Game")
@@ -693,6 +700,7 @@ def mainGame():
     global spwn_speed
     global upgrade_opened
     global is_paused
+    event = None
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -706,6 +714,36 @@ def mainGame():
                     else:
                         is_paused = True
                         player.can_move = True
+
+            if event.type == pygame.MOUSEBUTTONDOWN: 
+                event = pygame.MOUSEBUTTONDOWN
+                if upgrade_opened:
+                    if increase_max_health.checkForInput(mouse_pos):
+                        if player.startfish >= increase_max_health.cost and player.level >= increase_max_health.level:
+                            player.startfish -= increase_max_health.cost
+                            increase_max_health.cost = increase_max_health.cost * 4
+                            increase_max_health.level = increase_max_health.level * random.randint(1, 3)
+                            player.health += player.max_health / 3
+                    if decrease_bullet_cooldown.checkForInput(mouse_pos):
+                        if player.startfish >= decrease_bullet_cooldown.cost and player.level >= decrease_bullet_cooldown.level:
+                            player.startfish -= decrease_bullet_cooldown.cost
+                            decrease_bullet_cooldown.cost = int(pow(decrease_bullet_cooldown.cost, 2) * 1.5)
+                            decrease_bullet_cooldown.level = decrease_bullet_cooldown.level * 4 + random.randint(1, 5)
+                            player.fire_cooldown -= 0.04
+                    if increase_bullet_count.checkForInput(mouse_pos):
+                        if player.startfish >= increase_bullet_count.cost and player.level >= increase_bullet_count.level:
+                            player.startfish -= increase_bullet_count.cost
+                            increase_bullet_count.cost = int(pow(increase_bullet_count.cost, 2) * 1.5)
+                            increase_bullet_count.level = increase_bullet_count.level * 3 + random.randint(1, 5)
+                            player.n_bullet +=1               
+                    if increase_bullet_speed.checkForInput(mouse_pos):
+                        if player.startfish >= increase_bullet_speed.cost and player.level >= increase_bullet_speed.level:
+                            player.startfish -= increase_bullet_speed.cost
+                            increase_bullet_speed.cost = pow(increase_bullet_speed.cost, 2)
+                            increase_bullet_speed.level = increase_bullet_speed.level * 3 + random.randint(1, 5)
+                            player.bullet_speed +=30
+            else:
+                event = None
 
         mouse_pos = pygame.mouse.get_pos()
         screen.fill(black)
@@ -749,7 +787,7 @@ def mainGame():
                 i.y = i.y - player.y_offset
             i.draw(screen)
 
-        player.draw(mouse_pos)
+        player.draw(mouse_pos, event)
         for i in bullets:
             if not is_paused:
                 i.x = i.x - player.x_offset
@@ -778,7 +816,6 @@ def mainGame():
         pygame.draw.rect(screen, (200,0,0), bg.base)
         if can_leave:
             if bg.next_level.colliderect(player.rect):
-                    print('wi')
                     maps.remove(bg)
                     bg = Maps(random.randint(2, 5))
                     maps.add(bg)
@@ -811,35 +848,6 @@ def mainGame():
             for i in shop_buttons:
                 i.update(screen)
                 i.changeColor(mouse_pos)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if increase_max_health.checkForInput(mouse_pos):
-                    if player.startfish >= increase_max_health.cost and player.level >= increase_max_health.level:
-                        player.startfish -= increase_max_health.cost
-                        increase_max_health.cost = increase_max_health.cost * 4
-                        increase_max_health.level = increase_max_health.level * random.randint(1, 3)
-                        player.health += player.max_health / 3
-                if decrease_bullet_cooldown.checkForInput(mouse_pos):
-                    if player.startfish >= decrease_bullet_cooldown.cost and player.level >= decrease_bullet_cooldown.level:
-                        player.startfish -= decrease_bullet_cooldown.cost
-                        decrease_bullet_cooldown.cost = int(pow(decrease_bullet_cooldown.cost, 2) * 1.5)
-                        decrease_bullet_cooldown.level = decrease_bullet_cooldown.level * 4 + random.randint(1, 5)
-                        player.fire_cooldown -= 0.04
-                if increase_bullet_count.checkForInput(mouse_pos):
-                    if player.startfish >= increase_bullet_count.cost and player.level >= increase_bullet_count.level:
-                        player.startfish -= increase_bullet_count.cost
-                        increase_bullet_count.cost = int(pow(increase_bullet_count.cost, 2) * 1.5)
-                        increase_bullet_count.level = increase_bullet_count.level * 3 + random.randint(1, 5)
-                        player.n_bullet +=1               
-                if increase_bullet_speed.checkForInput(mouse_pos):
-                    if player.startfish >= increase_bullet_speed.cost and player.level >= increase_bullet_speed.level:
-                        player.startfish -= increase_bullet_speed.cost
-                        increase_bullet_speed.cost = pow(increase_bullet_speed.cost, 2)
-                        increase_bullet_speed.level = increase_bullet_speed.level * 3 + random.randint(1, 5)
-                        player.bullet_speed +=30
 
         pygame.display.flip()
 
